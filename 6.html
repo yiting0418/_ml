@@ -72,10 +72,9 @@ body {
   font-family: var(--font-sans); 
   background-color: var(--color-background-page);
   color: var(--color-text-primary);
-  /* 使用 Flexbox 確保垂直與水平置中，加上 padding 避免螢幕太小時貼邊 */
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* 讓內容太長時可以正常往下捲動 */
+  align-items: flex-start;
   min-height: 100vh;
   padding: 3rem 1.5rem;
   line-height: 1.6;
@@ -83,7 +82,7 @@ body {
 
 .container { 
   width: 100%;
-  max-width: 850px; /* 稍微加寬一點，讓內容有呼吸空間 */
+  max-width: 850px;
   background: var(--color-background-primary);
   padding: 2.5rem;
   border-radius: var(--border-radius-lg);
@@ -95,7 +94,15 @@ h2 { margin-bottom: 1.5rem; font-size: 26px; font-weight: 700; text-align: cente
 /* =========================================
    3. 頁籤與內容區塊
    ========================================= */
-.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; border-bottom: 2px solid var(--color-border-secondary); padding-bottom: 1rem; justify-content: center;}
+.tabs { 
+  display: flex; 
+  justify-content: center; /* 讓頁籤按鈕置中 */
+  gap: 8px; 
+  flex-wrap: wrap; 
+  margin-bottom: 2rem; 
+  border-bottom: 2px solid var(--color-border-secondary); 
+  padding-bottom: 1rem;
+}
 .tab-btn {
   padding: 8px 16px; border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border-tertiary);
