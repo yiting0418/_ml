@@ -1,0 +1,602 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.container { padding: 1rem 0; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.tab-btn {
+  padding: 6px 14px; border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary); font-size: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn:hover { background: var(--color-background-secondary); }
+.tab-btn.active {
+  background: var(--color-background-info);
+  color: var(--color-text-info);
+  border-color: transparent; font-weight: 500;
+}
+.panel { display: none; }
+.panel.active { display: block; }
+.era-badge {
+  display: inline-block; font-size: 11px; padding: 2px 8px;
+  border-radius: var(--border-radius-md); margin-bottom: 12px;
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+}
+.desc { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1rem; line-height: 1.6; }
+.model-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-primary); }
+.input-row { display: flex; gap: 8px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.input-row input, .input-row select {
+  flex: 1; min-width: 180px; padding: 8px 12px;
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary); font-size: 14px;
+}
+.run-btn {
+  padding: 8px 18px; border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary); font-size: 14px; cursor: pointer;
+  font-weight: 500; white-space: nowrap;
+}
+.run-btn:hover { background: var(--color-background-secondary); }
+.result-box {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 1rem 1.25rem; margin-bottom: 1rem; min-height: 60px;
+}
+.result-label { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+.result-text { font-size: 15px; color: var(--color-text-primary); line-height: 1.7; }
+.token { display: inline-block; margin: 2px; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+.candidates { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.cand {
+  font-size: 12px; padding: 3px 8px; border-radius: 20px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  color: var(--color-text-secondary);
+}
+.cand.top { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; font-weight: 500; }
+.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.slider-row label { font-size: 13px; color: var(--color-text-secondary); min-width: 90px; }
+.slider-row input[type=range] { flex: 1; }
+.slider-val { font-size: 13px; font-weight: 500; min-width: 32px; color: var(--color-text-primary); }
+.info-box {
+  border-left: 2px solid var(--color-border-info);
+  padding: 10px 14px; margin-top: 1rem;
+  background: var(--color-background-info);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  font-size: 13px; color: var(--color-text-info); line-height: 1.6;
+}
+.prob-bar-wrap { margin: 10px 0; }
+.prob-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.prob-label { font-size: 13px; min-width: 60px; color: var(--color-text-primary); }
+.prob-bar-bg { flex: 1; height: 16px; background: var(--color-background-secondary); border-radius: 8px; overflow: hidden; }
+.prob-bar { height: 100%; background: #378ADD; border-radius: 8px; transition: width 0.3s; }
+.prob-pct { font-size: 12px; color: var(--color-text-secondary); min-width: 38px; text-align: right; }
+.section-sep { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1rem 0; }
+textarea {
+  width: 100%; padding: 10px 12px; border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary); font-size: 14px;
+  resize: vertical; font-family: var(--font-sans);
+}
+.tag { font-size: 12px; padding: 2px 7px; border-radius: var(--border-radius-md); display: inline-block; }
+.tag-pos { background: var(--color-background-success); color: var(--color-text-success); }
+.tag-neg { background: var(--color-background-danger); color: var(--color-text-danger); }
+.tag-neu { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 500px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="container">
+<h2 class="sr-only">非 Transformer 語言模型互動探索器：比較規則法、馬可夫模型、TF-IDF、詞向量等方法</h2>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="markov">馬可夫模型</button>
+  <button class="tab-btn" data-tab="regex">Regex 規則</button>
+  <button class="tab-btn" data-tab="cfg">CFG 文法</button>
+  <button class="tab-btn" data-tab="tfidf">TF-IDF</button>
+  <button class="tab-btn" data-tab="naive">貝氏分類</button>
+  <button class="tab-btn" data-tab="embed">詞向量</button>
+</div>
+
+<!-- ======= MARKOV ======= -->
+<div class="panel active" id="panel-markov">
+  <div class="era-badge">統計語言學 1990s</div>
+  <div class="model-title">N-gram 馬可夫模型（Bigram / Trigram）</div>
+  <div class="desc">用前 N 個詞的條件機率預測下一個詞。語料越大，效果越好。這裡用內建語料示範「自回歸生成」。</div>
+  <div class="input-row">
+    <input type="text" id="markov-prompt" placeholder="輸入起始字（如：今天、我覺得、春天）" value="今天天氣">
+    <select id="markov-n">
+      <option value="1">Bigram（前1詞）</option>
+      <option value="2" selected>Trigram（前2詞）</option>
+      <option value="3">4-gram（前3詞）</option>
+    </select>
+    <button class="run-btn" onclick="runMarkov()">生成</button>
+  </div>
+  <div class="slider-row">
+    <label>Temperature</label>
+    <input type="range" min="0.1" max="2" step="0.1" value="1" id="markov-temp" oninput="document.getElementById('markov-temp-v').textContent=parseFloat(this.value).toFixed(1)">
+    <span class="slider-val" id="markov-temp-v">1.0</span>
+  </div>
+  <div class="slider-row">
+    <label>生成長度</label>
+    <input type="range" min="5" max="40" step="1" value="20" id="markov-len" oninput="document.getElementById('markov-len-v').textContent=this.value">
+    <span class="slider-val" id="markov-len-v">20</span>
+  </div>
+  <div class="result-box">
+    <div class="result-label">生成結果</div>
+    <div class="result-text" id="markov-out">點擊「生成」查看結果</div>
+  </div>
+  <div class="result-box">
+    <div class="result-label">每步候選字（依機率排序）</div>
+    <div id="markov-steps" style="font-size:13px; color: var(--color-text-secondary);">—</div>
+  </div>
+  <div class="info-box">原理：P(下一詞 | 前N詞)，從語料中統計條件頻次再正規化為機率分布。Temperature 越高輸出越多樣，越低越保守（接近 greedy）。</div>
+</div>
+
+<!-- ======= REGEX ======= -->
+<div class="panel" id="panel-regex">
+  <div class="era-badge">規則為本 1950-1980s</div>
+  <div class="model-title">正則表達式（Regex）規則引擎</div>
+  <div class="desc">透過手寫規則匹配句型，然後套用模板填入答案。這是早期聊天機器人（ELIZA）的核心技術。</div>
+  <div class="input-row">
+    <input type="text" id="regex-input" placeholder="輸入一句話，試試規則匹配..." value="我喜歡吃蘋果">
+    <button class="run-btn" onclick="runRegex()">分析</button>
+  </div>
+  <div class="result-box">
+    <div class="result-label">匹配到的規則 → 回應模板</div>
+    <div class="result-text" id="regex-out">—</div>
+  </div>
+  <div id="regex-rules-list" style="margin-top:10px;"></div>
+  <div class="info-box">優點：速度極快、完全可解釋。缺點：無法處理未見過的句型，無法理解語意，維護成本極高。</div>
+</div>
+
+<!-- ======= CFG ======= -->
+<div class="panel" id="panel-cfg">
+  <div class="era-badge">符號 NLP 1960-1980s</div>
+  <div class="model-title">上下文無關文法（CFG）句型生成器</div>
+  <div class="desc">用手寫的產生式規則（Production Rules）隨機展開句子結構，能產出「文法正確」但可能語意奇怪的句子。</div>
+  <div class="input-row">
+    <select id="cfg-start">
+      <option value="S">完整句子（S）</option>
+      <option value="NP">名詞組（NP）</option>
+      <option value="VP">動詞組（VP）</option>
+    </select>
+    <button class="run-btn" onclick="runCFG()">展開</button>
+  </div>
+  <div class="result-box">
+    <div class="result-label">生成句子</div>
+    <div class="result-text" id="cfg-out">—</div>
+  </div>
+  <div class="result-box">
+    <div class="result-label">展開過程（產生式推導）</div>
+    <div id="cfg-trace" style="font-size:13px; line-height:1.8; color: var(--color-text-secondary);">—</div>
+  </div>
+  <div class="info-box">CFG 規則格式：左側符號 → 右側展開（可以是終端詞或其他非終端符號）。可用來做語法解析、驗證句子結構。</div>
+</div>
+
+<!-- ======= TFIDF ======= -->
+<div class="panel" id="panel-tfidf">
+  <div class="era-badge">統計 NLP 1990s</div>
+  <div class="model-title">TF-IDF 關鍵字抽取</div>
+  <div class="desc">計算詞在文件中的重要程度。TF（詞頻）× IDF（逆文件頻率）= 這個詞對本文有多獨特。</div>
+  <textarea id="tfidf-doc" rows="4" placeholder="輸入一段文字...">今天台灣天氣很好，台灣的山很美，台灣人都很友善。我喜歡在台灣旅行，旅行讓我快樂。</textarea>
+  <div style="margin: 8px 0;">
+    <button class="run-btn" onclick="runTFIDF()">計算 TF-IDF</button>
+  </div>
+  <div class="result-box">
+    <div class="result-label">詞彙重要度排行</div>
+    <div id="tfidf-out">—</div>
+  </div>
+  <div class="info-box">IDF = log(總文件數 / 含此詞的文件數)。越稀有的詞 IDF 越高；「的、了、我」這類常見詞 IDF 很低，自動被壓低。</div>
+</div>
+
+<!-- ======= NAIVE BAYES ======= -->
+<div class="panel" id="panel-naive">
+  <div class="era-badge">統計 NLP 1990s</div>
+  <div class="model-title">Naive Bayes 情感分類</div>
+  <div class="desc">用詞頻統計算出「這句話屬於正面/負面情感」的機率。已內建簡易訓練集，輸入句子即可分類。</div>
+  <div class="input-row">
+    <input type="text" id="nb-input" placeholder="輸入一句話..." value="這個產品品質很好，我很喜歡">
+    <button class="run-btn" onclick="runNB()">分類</button>
+  </div>
+  <div class="result-box">
+    <div class="result-label">分類結果</div>
+    <div class="result-text" id="nb-out">—</div>
+  </div>
+  <div class="result-box">
+    <div class="result-label">關鍵詞貢獻度（對數機率）</div>
+    <div id="nb-words">—</div>
+  </div>
+  <div class="info-box">Naive Bayes 假設各詞彼此獨立（這是「天真」假設），所以叫 Naïve。P(類別|句子) ∝ P(類別) × ∏ P(詞|類別)。</div>
+</div>
+
+<!-- ======= EMBEDDINGS ======= -->
+<div class="panel" id="panel-embed">
+  <div class="era-badge">詞向量革命 2013</div>
+  <div class="model-title">詞向量語意相似度（Word Embeddings 概念示範）</div>
+  <div class="desc">用預設的 2D 詞向量模擬 Word2Vec 語意空間。語意相近的詞在向量空間中距離更近，還可做向量運算。</div>
+  <div class="input-row">
+    <input type="text" id="embed-word" placeholder="查詢詞（如：國王、台灣、快樂）" value="國王">
+    <button class="run-btn" onclick="runEmbed()">找相近詞</button>
+  </div>
+  <div class="grid2">
+    <div class="result-box">
+      <div class="result-label">最相近的詞（餘弦相似度）</div>
+      <div id="embed-similar">—</div>
+    </div>
+    <div class="result-box">
+      <div class="result-label">向量運算</div>
+      <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="vec-a" value="國王" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
+        <span style="font-size:13px;">−</span>
+        <input type="text" id="vec-b" value="男人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
+        <span style="font-size:13px;">+</span>
+        <input type="text" id="vec-c" value="女人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
+        <button class="run-btn" onclick="runVecOp()" style="padding:4px 10px; font-size:13px;">＝?</button>
+      </div>
+      <div id="vec-result" style="font-size:14px; color: var(--color-text-primary);">—</div>
+    </div>
+  </div>
+  <div class="result-box">
+    <div class="result-label">詞向量空間（2D 視覺化）</div>
+    <canvas id="embed-canvas" width="620" height="240" style="width:100%; height:auto;"></canvas>
+  </div>
+  <div class="info-box">真實的 Word2Vec 是 300 維向量，這裡用 2D 示範概念。向量的方向和長度都有語意意義。</div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'embed') drawEmbedCanvas();
+  });
+});
+
+// ── CORPUS ──────────────────────────────────────────────────
+const CORPUS = `今天天氣很好 我喜歡今天的天氣 今天我去爬山 山上風景很美 美麗的台灣山脈 台灣是個美麗的島嶼 島嶼四面環海 海邊風景怡人 天氣晴朗心情好 心情好就去旅行 旅行讓人快樂 快樂是幸福的源泉 幸福需要努力 努力才能成功 成功的人都很努力 台灣的食物很好吃 好吃的東西讓人快樂 今天吃了很多好吃的東西 天空很藍海很深 深山裡有很多動物 動物和人類共存 今天是個好日子 好日子值得珍惜 春天來了花開了 花開的時候很美 美好的事物值得分享 分享帶來快樂 快樂要和大家分享 我喜歡台灣的文化 文化是民族的根 根深才能枝葉茂盛`;
+
+function buildNgram(text, n) {
+  const words = text.split(/\s+/).filter(w => w.length > 0).flatMap(s => [...s]);
+  const model = {};
+  for (let i = 0; i < words.length - n; i++) {
+    const ctx = words.slice(i, i + n).join('|');
+    const next = words[i + n];
+    if (!model[ctx]) model[ctx] = {};
+    model[ctx][next] = (model[ctx][next] || 0) + 1;
+  }
+  return model;
+}
+
+function sampleFromDist(dist, temp) {
+  const entries = Object.entries(dist);
+  const total = entries.reduce((s, [,c]) => s + c, 0);
+  let probs = entries.map(([w, c]) => [w, Math.pow(c / total, 1 / temp)]);
+  const pSum = probs.reduce((s, [,p]) => s + p, 0);
+  probs = probs.map(([w, p]) => [w, p / pSum]);
+  const r = Math.random();
+  let acc = 0;
+  for (const [w, p] of probs) { acc += p; if (r < acc) return [w, probs]; }
+  return [probs[0][0], probs];
+}
+
+function runMarkov() {
+  const prompt = document.getElementById('markov-prompt').value.trim() || '今天';
+  const n = parseInt(document.getElementById('markov-n').value);
+  const temp = parseFloat(document.getElementById('markov-temp').value);
+  const maxLen = parseInt(document.getElementById('markov-len').value);
+  const model = buildNgram(CORPUS, n);
+
+  const chars = [...prompt];
+  let ctx = chars.slice(-n);
+  if (ctx.length < n) ctx = Array(n - ctx.length).fill('今').concat(ctx);
+  
+  let generated = [...chars];
+  let steps = [];
+  
+  for (let i = 0; i < maxLen; i++) {
+    const key = ctx.join('|');
+    const dist = model[key];
+    if (!dist) break;
+    const [chosen, probs] = sampleFromDist(dist, temp);
+    const top3 = probs.sort((a,b) => b[1]-a[1]).slice(0,4);
+    steps.push({ ctx: ctx.join(''), chosen, top3 });
+    generated.push(chosen);
+    ctx = [...ctx.slice(1), chosen];
+  }
+
+  document.getElementById('markov-out').innerHTML =
+    generated.map((c, i) => {
+      const col = i < prompt.length
+        ? 'color:var(--color-text-tertiary)'
+        : 'color:var(--color-text-primary); font-weight:500';
+      return `<span style="${col}">${c}</span>`;
+    }).join('');
+
+  document.getElementById('markov-steps').innerHTML = steps.slice(0,8).map(s =>
+    `<div style="margin-bottom:4px"><span style="color:var(--color-text-info);font-weight:500">「${s.ctx}」→</span> ` +
+    s.top3.map((([w,p],i) => `<span class="${i===0?'cand top':'cand'}">${w} ${(p*100).toFixed(0)}%</span>`)).join('') +
+    ` <span style="color:var(--color-text-danger)">✓${s.chosen}</span></div>`
+  ).join('');
+}
+
+// ── REGEX ──────────────────────────────────────────────────
+const RULES = [
+  { pattern: /我(?:非常|很|超)?喜歡(.+)/, label: '喜好表達', response: m => `你喜歡${m[1]}，這很好！能說說為什麼喜歡嗎？` },
+  { pattern: /我(?:覺得|認為|感覺)(.+)/, label: '意見陳述', response: m => `你認為${m[1]}，這是個有趣的觀點。` },
+  { pattern: /今天(.+)/, label: '今日事件', response: m => `今天${m[1]}，聽起來是個充實的一天！` },
+  { pattern: /(.+)在哪(裡|兒)?/, label: '詢問位置', response: m => `你在詢問${m[1]}的位置，我需要更多資訊才能回答。` },
+  { pattern: /(.+)好(?:吃|喝|玩|看)嗎/, label: '詢問評價', response: m => `關於${m[1]}是否好，這取決於個人口味！` },
+  { pattern: /你好|哈囉|嗨/, label: '打招呼', response: () => `你好！很高興和你說話。` },
+  { pattern: /謝謝|感謝/, label: '感謝', response: () => `不客氣！有什麼可以幫你的？` },
+];
+
+function runRegex() {
+  const input = document.getElementById('regex-input').value.trim();
+  let matched = false;
+  let html = '';
+  for (const rule of RULES) {
+    const m = input.match(rule.pattern);
+    if (m) {
+      html = `<span class="tag tag-pos">✓ 匹配規則：${rule.label}</span><br><br><strong>回應：</strong> ${rule.response(m)}`;
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) html = `<span class="tag tag-neg">✗ 無匹配規則</span><br><br>系統無法處理此輸入，需要語言學家手動新增規則。`;
+  document.getElementById('regex-out').innerHTML = html;
+
+  document.getElementById('regex-rules-list').innerHTML =
+    '<div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">現有規則：' +
+    RULES.map(r => `<code style="font-family:var(--font-mono);background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;margin:2px;display:inline-block">${r.label}</code>`).join(' ') + '</div>';
+}
+
+// ── CFG ──────────────────────────────────────────────────
+const CFG = {
+  S:  [['NP', 'VP'], ['NP', 'VP', 'PP']],
+  NP: [['Det', 'N'], ['Det', 'Adj', 'N'], ['N']],
+  VP: [['V', 'NP'], ['V', 'Adj'], ['V']],
+  PP: [['P', 'NP']],
+  Det: [['這個'], ['一個'], ['那隻'], ['我的'], ['台灣的']],
+  N:  [['貓咪'], ['學生'], ['程式設計師'], ['天空'], ['山脈'], ['朋友'], ['老師']],
+  Adj:[['快樂的'], ['聰明的'], ['美麗的'], ['努力的'], ['懶惰的']],
+  V:  [['喜歡'], ['看見'], ['幫助'], ['研究'], ['忘記'], ['理解']],
+  P:  [['在'], ['和'], ['關於']],
+};
+
+function expandCFG(sym, trace) {
+  if (!CFG[sym]) return sym;
+  const rules = CFG[sym];
+  const chosen = rules[Math.floor(Math.random() * rules.length)];
+  trace.push(`${sym} → ${chosen.join(' ')}`);
+  return chosen.map(s => expandCFG(s, trace)).join('');
+}
+
+function runCFG() {
+  const start = document.getElementById('cfg-start').value;
+  const trace = [];
+  const result = expandCFG(start, trace);
+  document.getElementById('cfg-out').textContent = result;
+  document.getElementById('cfg-trace').innerHTML = trace.map((t,i) =>
+    `<div style="margin-left:${i*8}px; color: ${i===0?'var(--color-text-primary)':'var(--color-text-secondary)'}">→ ${t}</div>`
+  ).join('');
+}
+
+// ── TF-IDF ──────────────────────────────────────────────
+const STOPWORDS = new Set(['的','了','是','在','我','你','他','她','它','和','也','都','很','就','不','有','與','為','以','這','那','一','個','而','但','或','及','對','從','向','於','到','把']);
+
+function tokenize(text) {
+  return [...text].filter(c => /[\u4e00-\u9fff]/.test(c)).filter(c => !STOPWORDS.has(c));
+}
+
+const CORPUS_DOCS = [
+  '台灣是個美麗的島嶼，四面環海，山脈雄偉。',
+  '台灣的食物非常美味，小吃文化聞名世界。',
+  '旅行讓人增廣見聞，快樂而充實。',
+  '努力工作才能成功，成功帶來幸福感。',
+];
+
+function runTFIDF() {
+  const doc = document.getElementById('tfidf-doc').value;
+  const allDocs = [doc, ...CORPUS_DOCS];
+  const tokens = tokenize(doc);
+  const tf = {};
+  tokens.forEach(t => tf[t] = (tf[t]||0)+1);
+  const vocab = Object.keys(tf);
+  
+  const idf = {};
+  vocab.forEach(w => {
+    const df = allDocs.filter(d => d.includes(w)).length;
+    idf[w] = Math.log((allDocs.length + 1) / (df + 1)) + 1;
+  });
+
+  const scores = vocab.map(w => ({ w, tf: tf[w], idf: idf[w], tfidf: tf[w] * idf[w] }));
+  scores.sort((a,b) => b.tfidf - a.tfidf);
+  const top = scores.slice(0, 10);
+  const maxScore = top[0]?.tfidf || 1;
+
+  document.getElementById('tfidf-out').innerHTML = top.map(({w, tf: t, idf: d, tfidf: s}) =>
+    `<div class="prob-row">
+      <span class="prob-label">${w}</span>
+      <div class="prob-bar-bg"><div class="prob-bar" style="width:${(s/maxScore*100).toFixed(0)}%"></div></div>
+      <span class="prob-pct">${s.toFixed(2)}</span>
+      <span style="font-size:11px;color:var(--color-text-tertiary);margin-left:4px">tf=${t} idf=${d.toFixed(1)}</span>
+    </div>`
+  ).join('');
+}
+
+// ── NAIVE BAYES ──────────────────────────────────────────────
+const NB_TRAIN = {
+  pos: '好吃 喜歡 快樂 美好 幸福 開心 棒 優秀 讚 有趣 精彩 舒適 滿意 推薦 好用 方便 厲害 感謝 漂亮 美麗 成功 順利 完美 享受',
+  neg: '難吃 討厭 痛苦 糟糕 失敗 生氣 爛 差勁 失望 無聊 煩惱 可惡 後悔 抱怨 壞掉 麻煩 困難 可怕 噁心 難受 遺憾 傷心 沮喪 失落'
+};
+
+function buildNBModel() {
+  const counts = { pos: {}, neg: {} };
+  const totals = { pos: 0, neg: 0 };
+  ['pos','neg'].forEach(cls => {
+    NB_TRAIN[cls].split(' ').forEach(w => {
+      counts[cls][w] = (counts[cls][w]||0) + 1;
+      totals[cls]++;
+    });
+  });
+  return { counts, totals };
+}
+const NB_MODEL = buildNBModel();
+
+function runNB() {
+  const input = document.getElementById('nb-input').value;
+  const words = tokenize(input).filter(w => !STOPWORDS.has(w));
+  const {counts, totals} = NB_MODEL;
+  const vocab = Object.keys({...counts.pos, ...counts.neg});
+
+  let logPos = Math.log(0.5), logNeg = Math.log(0.5);
+  const wordContribs = [];
+
+  words.forEach(w => {
+    const pPos = Math.log(((counts.pos[w]||0) + 1) / (totals.pos + vocab.length));
+    const pNeg = Math.log(((counts.neg[w]||0) + 1) / (totals.neg + vocab.length));
+    logPos += pPos; logNeg += pNeg;
+    wordContribs.push({ w, diff: pPos - pNeg });
+  });
+
+  const posProb = Math.exp(logPos) / (Math.exp(logPos) + Math.exp(logNeg));
+  const label = posProb > 0.5 ? 'pos' : 'neg';
+  document.getElementById('nb-out').innerHTML =
+    `<span class="tag ${label==='pos'?'tag-pos':'tag-neg'}">${label==='pos'?'正面情感':'負面情感'}</span> ` +
+    `信心度 ${(Math.max(posProb, 1-posProb)*100).toFixed(1)}%` +
+    `<div style="margin-top:8px;font-size:13px">
+      <span style="color:var(--color-text-success)">正面得分: ${logPos.toFixed(2)}</span> &nbsp;|&nbsp;
+      <span style="color:var(--color-text-danger)">負面得分: ${logNeg.toFixed(2)}</span>
+    </div>`;
+
+  wordContribs.sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff));
+  document.getElementById('nb-words').innerHTML = wordContribs.slice(0,6).map(({w, diff}) =>
+    `<span class="tag ${diff>0?'tag-pos':'tag-neg'}" style="margin:2px">${w} ${diff>0?'+':''}${diff.toFixed(2)}</span>`
+  ).join(' ') || '<span style="color:var(--color-text-tertiary)">（無已知詞彙）</span>';
+}
+
+// ── WORD EMBEDDINGS ──────────────────────────────────────────
+const EMBEDDINGS = {
+  '國王': [0.8, 0.6], '女王': [0.7, -0.5], '男人': [0.5, 0.7], '女人': [0.4, -0.6],
+  '台灣': [-0.6, 0.3], '日本': [-0.7, 0.4], '中國': [-0.8, 0.2], '美國': [-0.9, 0.1],
+  '快樂': [0.1, 0.9], '悲傷': [0.1, -0.9], '幸福': [0.2, 0.85], '痛苦': [0.2, -0.85],
+  '貓': [-0.2, 0.3], '狗': [-0.3, 0.4], '鳥': [-0.1, 0.5], '魚': [0.0, 0.2],
+  '蘋果': [0.6, 0.1], '橘子': [0.65, 0.05], '香蕉': [0.7, 0.0],
+  '山': [-0.5, -0.1], '海': [-0.4, -0.2], '天空': [-0.3, -0.3],
+};
+
+function cosineSim([ax,ay], [bx,by]) {
+  const dot = ax*bx + ay*by;
+  const magA = Math.sqrt(ax*ax+ay*ay);
+  const magB = Math.sqrt(bx*bx+by*by);
+  return dot / (magA * magB + 1e-9);
+}
+
+function vecAdd([ax,ay],[bx,by]) { return [ax+bx, ay+by]; }
+function vecSub([ax,ay],[bx,by]) { return [ax-bx, ay-by]; }
+
+function runEmbed() {
+  const word = document.getElementById('embed-word').value.trim();
+  const vec = EMBEDDINGS[word];
+  if (!vec) {
+    document.getElementById('embed-similar').textContent = '詞彙不在詞典中，試試：國王、台灣、快樂、貓';
+    return;
+  }
+  const sims = Object.entries(EMBEDDINGS)
+    .filter(([w]) => w !== word)
+    .map(([w, v]) => ({ w, sim: cosineSim(vec, v) }))
+    .sort((a,b) => b.sim - a.sim).slice(0,5);
+
+  document.getElementById('embed-similar').innerHTML = sims.map(({w, sim}) =>
+    `<div class="prob-row">
+      <span class="prob-label">${w}</span>
+      <div class="prob-bar-bg"><div class="prob-bar" style="width:${((sim+1)/2*100).toFixed(0)}%"></div></div>
+      <span class="prob-pct">${sim.toFixed(3)}</span>
+    </div>`
+  ).join('');
+  drawEmbedCanvas(word);
+}
+
+function runVecOp() {
+  const a = document.getElementById('vec-a').value.trim();
+  const b = document.getElementById('vec-b').value.trim();
+  const c = document.getElementById('vec-c').value.trim();
+  const va = EMBEDDINGS[a], vb = EMBEDDINGS[b], vc = EMBEDDINGS[c];
+  if (!va||!vb||!vc) { document.getElementById('vec-result').textContent = '請確認詞彙在詞典中'; return; }
+  const target = vecAdd(vecSub(va,vb),vc);
+  const sims = Object.entries(EMBEDDINGS)
+    .filter(([w]) => w!==a&&w!==b&&w!==c)
+    .map(([w,v]) => ({ w, sim: cosineSim(target,v) }))
+    .sort((a,b) => b.sim-a.sim).slice(0,3);
+  document.getElementById('vec-result').innerHTML =
+    `<strong>${a} − ${b} + ${c} ≈</strong><br>` +
+    sims.map(({w,sim}) => `<span class="cand ${sims.indexOf({w,sim})===0?'top':''}">${w} ${sim.toFixed(3)}</span>`).join(' ');
+}
+
+function drawEmbedCanvas(highlight) {
+  const canvas = document.getElementById('embed-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const textColor = isDark ? '#e0e0e0' : '#333';
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const axisColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+
+  const toX = v => (v + 1) / 2 * (W - 60) + 30;
+  const toY = v => (1 - (v + 1) / 2) * (H - 40) + 20;
+
+  for (let g = -0.5; g <= 1; g += 0.5) {
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(toX(-1), toY(g)); ctx.lineTo(toX(1), toY(g)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(toX(g), toY(-1)); ctx.lineTo(toX(g), toY(1)); ctx.stroke();
+  }
+  ctx.strokeStyle = axisColor; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(toX(-1), toY(0)); ctx.lineTo(toX(1), toY(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(-1)); ctx.lineTo(toX(0), toY(1)); ctx.stroke();
+
+  const colors = ['#378ADD','#1D9E75','#D85A30','#BA7517','#993556'];
+  const groups = [
+    { words: ['國王','女王','男人','女人'], color: '#378ADD' },
+    { words: ['台灣','日本','中國','美國'], color: '#1D9E75' },
+    { words: ['快樂','悲傷','幸福','痛苦'], color: '#D85A30' },
+    { words: ['貓','狗','鳥','魚'], color: '#BA7517' },
+    { words: ['蘋果','橘子','香蕉'], color: '#993556' },
+    { words: ['山','海','天空'], color: '#534AB7' },
+  ];
+
+  Object.entries(EMBEDDINGS).forEach(([w, [x, y]]) => {
+    const grp = groups.find(g => g.words.includes(w));
+    const col = grp ? grp.color : '#888';
+    const isHL = w === highlight;
+    ctx.beginPath();
+    ctx.arc(toX(x), toY(y), isHL ? 7 : 4, 0, Math.PI*2);
+    ctx.fillStyle = col + (isHL ? 'ff' : 'cc');
+    ctx.fill();
+    if (isHL) { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.fillStyle = textColor;
+    ctx.font = `${isHL?'500 ':''}11px var(--font-sans)`;
+    ctx.fillText(w, toX(x)+8, toY(y)+4);
+  });
+}
+
+// initial calls
+runMarkov();
+runCFG();
+runTFIDF();
+drawEmbedCanvas();
+setTimeout(drawEmbedCanvas, 200);
+</script>
