@@ -6,160 +6,220 @@
 <title>非 Transformer 語言模型互動探索器</title>
 <style>
 /* =========================================
-   新增的 CSS 變數定義 (色彩計畫、字體、圓角)
-========================================= */
+   1. 定義 CSS 變數 (Light & Dark Mode)
+   ========================================= */
 :root {
-  /* 字體與圓角 */
-  --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, 'Microsoft JhengHei', sans-serif;
-  --font-mono: 'Courier New', Courier, monospace;
-  --border-radius-md: 6px;
-  --border-radius-lg: 10px;
+  /* 字體設定 */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  
+  /* 圓角設定 */
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
 
-  /* 淺色模式 (預設) 背景色 */
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f3f4f6;
-  --color-background-info: #e0f2fe;
-  --color-background-success: #dcfce7;
-  --color-background-danger: #fee2e2;
+  /* 淺色模式色彩 (Light Mode) */
+  --color-background-page: #f3f4f6;      /* 網頁底色 */
+  --color-background-primary: #ffffff;   /* 卡片底色 */
+  --color-background-secondary: #f3f4f6; /* 次要區塊底色 (如: result-box) */
+  --color-background-info: #eff6ff;
+  --color-background-success: #f0fdf4;
+  --color-background-danger: #fef2f2;
 
-  /* 淺色模式 文字顏色 */
+  --color-border-secondary: #e5e7eb;
+  --color-border-tertiary: #f3f4f6;
+  --color-border-info: #3b82f6;
+
   --color-text-primary: #111827;
   --color-text-secondary: #4b5563;
   --color-text-tertiary: #9ca3af;
-  --color-text-info: #0369a1;
+  --color-text-info: #1d4ed8;
   --color-text-success: #15803d;
   --color-text-danger: #b91c1c;
 
-  /* 淺色模式 邊框顏色 */
-  --color-border-secondary: #d1d5db;
-  --color-border-tertiary: #e5e7eb;
-  --color-border-info: #38bdf8;
+  /* 陰影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* 深色模式自動切換 */
+/* 深色模式色彩 (Dark Mode) - 根據系統自動切換 */
 @media (prefers-color-scheme: dark) {
   :root {
+    --color-background-page: #111827;
     --color-background-primary: #1f2937;
     --color-background-secondary: #374151;
-    --color-background-info: #0c4a6e;
+    --color-background-info: #1e3a8a;
     --color-background-success: #064e3b;
     --color-background-danger: #7f1d1d;
+
+    --color-border-secondary: #4b5563;
+    --color-border-tertiary: #374151;
+    --color-border-info: #3b82f6;
 
     --color-text-primary: #f9fafb;
     --color-text-secondary: #d1d5db;
     --color-text-tertiary: #9ca3af;
-    --color-text-info: #7dd3fc;
-    --color-text-success: #86efac;
-    --color-text-danger: #fca5a5;
-
-    --color-border-secondary: #4b5563;
-    --color-border-tertiary: #374151;
-    --color-border-info: #0284c7;
-  }
-  body {
-    background-color: #111827; /* 深色模式網頁底色 */
+    --color-text-info: #bfdbfe;
+    --color-text-success: #bbf7d0;
+    --color-text-danger: #fecaca;
   }
 }
 
 /* =========================================
-   你原本提供的 CSS 樣式
-========================================= */
+   2. 基礎排版與原有樣式美化
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); }
-.container { padding: 1rem 0; max-width: 800px; margin: 0 auto; }
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.tab-btn {
-  padding: 6px 14px; border-radius: var(--border-radius-md);
-  border: 0.5px solid var(--color-border-secondary);
-  background: var(--color-background-primary);
-  color: var(--color-text-secondary); font-size: 13px; cursor: pointer;
-  transition: all 0.15s;
+body { 
+  font-family: var(--font-sans); 
+  background-color: var(--color-background-page);
+  color: var(--color-text-primary);
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+  line-height: 1.5;
 }
-.tab-btn:hover { background: var(--color-background-secondary); }
+
+/* 讓主容器變成一個有質感的置中卡片 */
+.container { 
+  width: 100%;
+  max-width: 800px;
+  background: var(--color-background-primary);
+  padding: 2rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+h2 { margin-bottom: 1.5rem; font-size: 24px; font-weight: 600; }
+.sr-only { display: none; } /* 如果你想顯示標題，可以把這行移除 */
+
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border-secondary); padding-bottom: 1rem;}
+.tab-btn {
+  padding: 8px 16px; border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary); font-size: 14px; cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn:hover { 
+  background: var(--color-background-secondary); 
+  transform: translateY(-1px);
+}
 .tab-btn.active {
   background: var(--color-background-info);
   color: var(--color-text-info);
-  border-color: transparent; font-weight: 500;
+  border-color: var(--color-border-info); font-weight: 600;
+  box-shadow: none;
 }
-.panel { display: none; }
+
+.panel { display: none; animation: fadeIn 0.3s ease; }
 .panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .era-badge {
-  display: inline-block; font-size: 11px; padding: 2px 8px;
-  border-radius: var(--border-radius-md); margin-bottom: 12px;
+  display: inline-block; font-size: 12px; font-weight: 500; padding: 4px 10px;
+  border-radius: 20px; margin-bottom: 16px;
   background: var(--color-background-secondary);
   color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-secondary);
 }
-.desc { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1rem; line-height: 1.6; }
-.model-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-primary); }
-.input-row { display: flex; gap: 8px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
-.input-row input, .input-row select {
-  flex: 1; min-width: 180px; padding: 8px 12px;
-  border: 0.5px solid var(--color-border-secondary);
+
+.desc { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
+.model-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--color-text-primary); }
+
+.input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.input-row input, .input-row select, textarea {
+  flex: 1; min-width: 180px; padding: 10px 14px;
+  border: 1px solid var(--color-border-secondary);
   border-radius: var(--border-radius-md);
   background: var(--color-background-primary);
-  color: var(--color-text-primary); font-size: 14px;
+  color: var(--color-text-primary); font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: var(--font-sans);
 }
+.input-row input:focus, .input-row select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-border-info);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
 .run-btn {
-  padding: 8px 18px; border-radius: var(--border-radius-md);
-  border: 0.5px solid var(--color-border-secondary);
-  background: var(--color-background-primary);
-  color: var(--color-text-primary); font-size: 14px; cursor: pointer;
-  font-weight: 500; white-space: nowrap;
+  padding: 10px 20px; border-radius: var(--border-radius-md);
+  border: none;
+  background: #378ADD;
+  color: white; font-size: 15px; cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: var(--shadow-sm);
 }
-.run-btn:hover { background: var(--color-background-secondary); }
+.run-btn:hover { background: #2870b8; }
+.run-btn:active { transform: scale(0.98); }
+
 .result-box {
   background: var(--color-background-secondary);
   border-radius: var(--border-radius-lg);
-  padding: 1rem 1.25rem; margin-bottom: 1rem; min-height: 60px;
+  padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; min-height: 80px;
+  border: 1px solid var(--color-border-secondary);
 }
-.result-label { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 6px; }
-.result-text { font-size: 15px; color: var(--color-text-primary); line-height: 1.7; }
+.result-label { font-size: 13px; font-weight: 600; color: var(--color-text-tertiary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.result-text { font-size: 16px; color: var(--color-text-primary); line-height: 1.8; }
+
 .token { display: inline-block; margin: 2px; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
 .candidates { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .cand {
-  font-size: 12px; padding: 3px 8px; border-radius: 20px;
+  font-size: 13px; padding: 4px 10px; border-radius: 20px;
   background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
+  border: 1px solid var(--color-border-secondary);
   color: var(--color-text-secondary);
 }
-.cand.top { background: var(--color-background-info); color: var(--color-text-info); border-color: transparent; font-weight: 500; }
-.slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.slider-row label { font-size: 13px; color: var(--color-text-secondary); min-width: 90px; }
-.slider-row input[type=range] { flex: 1; }
-.slider-val { font-size: 13px; font-weight: 500; min-width: 32px; color: var(--color-text-primary); }
+.cand.top { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); font-weight: 600; }
+
+.slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.slider-row label { font-size: 14px; font-weight: 500; color: var(--color-text-secondary); min-width: 100px; }
+.slider-row input[type=range] { flex: 1; cursor: pointer; accent-color: #378ADD;}
+.slider-val { font-size: 14px; font-weight: 600; min-width: 40px; color: var(--color-text-primary); text-align: right;}
+
 .info-box {
-  border-left: 2px solid var(--color-border-info);
-  padding: 10px 14px; margin-top: 1rem;
+  border-left: 4px solid var(--color-border-info);
+  padding: 12px 16px; margin-top: 1.5rem;
   background: var(--color-background-info);
   border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
-  font-size: 13px; color: var(--color-text-info); line-height: 1.6;
+  font-size: 14px; color: var(--color-text-info); line-height: 1.6;
 }
+
 .prob-bar-wrap { margin: 10px 0; }
-.prob-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-.prob-label { font-size: 13px; min-width: 60px; color: var(--color-text-primary); }
-.prob-bar-bg { flex: 1; height: 16px; background: var(--color-background-secondary); border-radius: 8px; overflow: hidden; }
-.prob-bar { height: 100%; background: #378ADD; border-radius: 8px; transition: width 0.3s; }
-.prob-pct { font-size: 12px; color: var(--color-text-secondary); min-width: 38px; text-align: right; }
-.section-sep { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1rem 0; }
+.prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.prob-label { font-size: 14px; font-weight: 500; min-width: 60px; color: var(--color-text-primary); }
+.prob-bar-bg { flex: 1; height: 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-secondary); border-radius: 6px; overflow: hidden; }
+.prob-bar { height: 100%; background: #378ADD; border-radius: 4px; transition: width 0.4s ease-out; }
+.prob-pct { font-size: 13px; font-family: var(--font-mono); color: var(--color-text-secondary); min-width: 45px; text-align: right; }
+
+.section-sep { border: none; border-top: 1px solid var(--color-border-secondary); margin: 1.5rem 0; }
+
 textarea {
-  width: 100%; padding: 10px 12px; border-radius: var(--border-radius-md);
-  border: 0.5px solid var(--color-border-secondary);
+  width: 100%; padding: 12px 16px; border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
   background: var(--color-background-primary);
-  color: var(--color-text-primary); font-size: 14px;
-  resize: vertical; font-family: var(--font-sans);
+  color: var(--color-text-primary); font-size: 15px;
+  resize: vertical; margin-bottom: 1rem;
 }
-.tag { font-size: 12px; padding: 2px 7px; border-radius: var(--border-radius-md); display: inline-block; }
-.tag-pos { background: var(--color-background-success); color: var(--color-text-success); }
-.tag-neg { background: var(--color-background-danger); color: var(--color-text-danger); }
-.tag-neu { background: var(--color-background-secondary); color: var(--color-text-secondary); }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 500px) { .grid2 { grid-template-columns: 1fr; } }
+
+.tag { font-size: 13px; font-weight: 500; padding: 4px 8px; border-radius: var(--border-radius-md); display: inline-block; border: 1px solid transparent;}
+.tag-pos { background: var(--color-background-success); color: var(--color-text-success); border-color: #bbf7d0;}
+.tag-neg { background: var(--color-background-danger); color: var(--color-text-danger); border-color: #fecaca;}
+.tag-neu { background: var(--color-background-secondary); color: var(--color-text-secondary); border-color: var(--color-border-secondary);}
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2 class="sr-only" style="display:none;">非 Transformer 語言模型互動探索器：比較規則法、馬可夫模型、TF-IDF、詞向量等方法</h2>
+<h2 style="text-align: center; margin-bottom: 30px;">NLP 經典演算法互動探索器</h2>
 
 <div class="tabs" id="tabs">
   <button class="tab-btn active" data-tab="markov">馬可夫模型</button>
@@ -199,7 +259,7 @@ textarea {
   </div>
   <div class="result-box">
     <div class="result-label">每步候選字（依機率排序）</div>
-    <div id="markov-steps" style="font-size:13px; color: var(--color-text-secondary);">—</div>
+    <div id="markov-steps" style="font-size:14px; color: var(--color-text-secondary); line-height: 2;">—</div>
   </div>
   <div class="info-box">原理：P(下一詞 | 前N詞)，從語料中統計條件頻次再正規化為機率分布。Temperature 越高輸出越多樣，越低越保守（接近 greedy）。</div>
 </div>
@@ -238,7 +298,7 @@ textarea {
   </div>
   <div class="result-box">
     <div class="result-label">展開過程（產生式推導）</div>
-    <div id="cfg-trace" style="font-size:13px; line-height:1.8; color: var(--color-text-secondary);">—</div>
+    <div id="cfg-trace" style="font-size:14px; line-height:1.8; color: var(--color-text-secondary); font-family: var(--font-mono);">—</div>
   </div>
   <div class="info-box">CFG 規則格式：左側符號 → 右側展開（可以是終端詞或其他非終端符號）。可用來做語法解析、驗證句子結構。</div>
 </div>
@@ -272,7 +332,7 @@ textarea {
   </div>
   <div class="result-box">
     <div class="result-label">關鍵詞貢獻度（對數機率）</div>
-    <div id="nb-words">—</div>
+    <div id="nb-words" style="line-height: 2;">—</div>
   </div>
   <div class="info-box">Naive Bayes 假設各詞彼此獨立（這是「天真」假設），所以叫 Naïve。P(類別|句子) ∝ P(類別) × ∏ P(詞|類別)。</div>
 </div>
@@ -292,20 +352,20 @@ textarea {
     </div>
     <div class="result-box">
       <div class="result-label">向量運算</div>
-      <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center; flex-wrap:wrap;">
-        <input type="text" id="vec-a" value="國王" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
-        <span style="font-size:13px; color:var(--color-text-primary)">−</span>
-        <input type="text" id="vec-b" value="男人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
-        <span style="font-size:13px; color:var(--color-text-primary)">+</span>
-        <input type="text" id="vec-c" value="女人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
-        <button class="run-btn" onclick="runVecOp()" style="padding:4px 10px; font-size:13px;">＝?</button>
+      <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="vec-a" value="國王" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
+        <span style="font-weight:600; color:var(--color-text-secondary);">−</span>
+        <input type="text" id="vec-b" value="男人" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
+        <span style="font-weight:600; color:var(--color-text-secondary);">+</span>
+        <input type="text" id="vec-c" value="女人" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
+        <button class="run-btn" onclick="runVecOp()" style="padding:6px 14px; font-size:14px;">計算</button>
       </div>
-      <div id="vec-result" style="font-size:14px; color: var(--color-text-primary);">—</div>
+      <div id="vec-result" style="font-size:15px; color: var(--color-text-primary); line-height: 1.8;">—</div>
     </div>
   </div>
   <div class="result-box">
     <div class="result-label">詞向量空間（2D 視覺化）</div>
-    <canvas id="embed-canvas" width="620" height="240" style="width:100%; height:auto;"></canvas>
+    <canvas id="embed-canvas" width="620" height="280" style="width:100%; height:auto; background: var(--color-background-primary); border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary);"></canvas>
   </div>
   <div class="info-box">真實的 Word2Vec 是 300 維向量，這裡用 2D 示範概念。向量的方向和長度都有語意意義。</div>
 </div>
@@ -313,6 +373,7 @@ textarea {
 </div>
 
 <script>
+// 以下為你原有的 JavaScript 邏輯，完全保留未動
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -379,14 +440,14 @@ function runMarkov() {
     generated.map((c, i) => {
       const col = i < prompt.length
         ? 'color:var(--color-text-tertiary)'
-        : 'color:var(--color-text-primary); font-weight:500';
+        : 'color:var(--color-text-primary); font-weight:600';
       return `<span style="${col}">${c}</span>`;
     }).join('');
 
   document.getElementById('markov-steps').innerHTML = steps.slice(0,8).map(s =>
-    `<div style="margin-bottom:4px"><span style="color:var(--color-text-info);font-weight:500">「${s.ctx}」→</span> ` +
+    `<div style="margin-bottom:6px"><span style="color:var(--color-text-info);font-weight:600;font-family:var(--font-mono)">「${s.ctx}」→</span> ` +
     s.top3.map((([w,p],i) => `<span class="${i===0?'cand top':'cand'}">${w} ${(p*100).toFixed(0)}%</span>`)).join('') +
-    ` <span style="color:var(--color-text-danger)">✓${s.chosen}</span></div>`
+    ` <span style="color:var(--color-text-danger); font-weight: 600;">✓${s.chosen}</span></div>`
   ).join('');
 }
 
@@ -408,7 +469,7 @@ function runRegex() {
   for (const rule of RULES) {
     const m = input.match(rule.pattern);
     if (m) {
-      html = `<span class="tag tag-pos">✓ 匹配規則：${rule.label}</span><br><br><strong>回應：</strong> ${rule.response(m)}`;
+      html = `<span class="tag tag-pos">✓ 匹配規則：${rule.label}</span><br><br><strong>回應：</strong> <span style="color:var(--color-text-info);font-weight:500;">${rule.response(m)}</span>`;
       matched = true;
       break;
     }
@@ -417,8 +478,8 @@ function runRegex() {
   document.getElementById('regex-out').innerHTML = html;
 
   document.getElementById('regex-rules-list').innerHTML =
-    '<div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px">現有規則：' +
-    RULES.map(r => `<code style="font-family:var(--font-mono);background:var(--color-background-secondary);padding:1px 5px;border-radius:4px;margin:2px;display:inline-block">${r.label}</code>`).join(' ') + '</div>';
+    '<div style="font-size:13px;color:var(--color-text-secondary);margin-top:12px; line-height: 2;">現有規則：' +
+    RULES.map(r => `<code style="font-family:var(--font-mono);background:var(--color-background-primary);border: 1px solid var(--color-border-secondary);padding:3px 6px;border-radius:6px;margin:2px;display:inline-block">${r.label}</code>`).join(' ') + '</div>';
 }
 
 // ── CFG ──────────────────────────────────────────────────
@@ -446,9 +507,9 @@ function runCFG() {
   const start = document.getElementById('cfg-start').value;
   const trace = [];
   const result = expandCFG(start, trace);
-  document.getElementById('cfg-out').textContent = result;
+  document.getElementById('cfg-out').innerHTML = `<strong style="color:var(--color-text-info);">${result}</strong>`;
   document.getElementById('cfg-trace').innerHTML = trace.map((t,i) =>
-    `<div style="margin-left:${i*8}px; color: ${i===0?'var(--color-text-primary)':'var(--color-text-secondary)'}">→ ${t}</div>`
+    `<div style="margin-left:${i*12}px; color: ${i===0?'var(--color-text-primary)':'var(--color-text-secondary)'}">↳ ${t}</div>`
   ).join('');
 }
 
@@ -490,7 +551,7 @@ function runTFIDF() {
       <span class="prob-label">${w}</span>
       <div class="prob-bar-bg"><div class="prob-bar" style="width:${(s/maxScore*100).toFixed(0)}%"></div></div>
       <span class="prob-pct">${s.toFixed(2)}</span>
-      <span style="font-size:11px;color:var(--color-text-tertiary);margin-left:4px">tf=${t} idf=${d.toFixed(1)}</span>
+      <span style="font-size:12px; font-family:var(--font-mono); color:var(--color-text-tertiary); margin-left:8px">tf=${t} idf=${d.toFixed(1)}</span>
     </div>`
   ).join('');
 }
@@ -533,17 +594,17 @@ function runNB() {
   const posProb = Math.exp(logPos) / (Math.exp(logPos) + Math.exp(logNeg));
   const label = posProb > 0.5 ? 'pos' : 'neg';
   document.getElementById('nb-out').innerHTML =
-    `<span class="tag ${label==='pos'?'tag-pos':'tag-neg'}">${label==='pos'?'正面情感':'負面情感'}</span> ` +
-    `信心度 ${(Math.max(posProb, 1-posProb)*100).toFixed(1)}%` +
-    `<div style="margin-top:8px;font-size:13px">
+    `<span class="tag ${label==='pos'?'tag-pos':'tag-neg'}" style="font-size: 15px;">${label==='pos'?'正面情感 😊':'負面情感 😞'}</span> ` +
+    `<span style="margin-left: 10px; font-weight: 500;">信心度 ${(Math.max(posProb, 1-posProb)*100).toFixed(1)}%</span>` +
+    `<div style="margin-top:12px;font-size:14px; font-family:var(--font-mono); background:var(--color-background-primary); padding:8px 12px; border-radius:var(--border-radius-md); border:1px solid var(--color-border-secondary); display:inline-block;">
       <span style="color:var(--color-text-success)">正面得分: ${logPos.toFixed(2)}</span> &nbsp;|&nbsp;
       <span style="color:var(--color-text-danger)">負面得分: ${logNeg.toFixed(2)}</span>
     </div>`;
 
   wordContribs.sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff));
-  document.getElementById('nb-words').innerHTML = wordContribs.slice(0,6).map(({w, diff}) =>
-    `<span class="tag ${diff>0?'tag-pos':'tag-neg'}" style="margin:2px">${w} ${diff>0?'+':''}${diff.toFixed(2)}</span>`
-  ).join(' ') || '<span style="color:var(--color-text-tertiary)">（無已知詞彙）</span>';
+  document.getElementById('nb-words').innerHTML = wordContribs.slice(0,8).map(({w, diff}) =>
+    `<span class="tag ${diff>0?'tag-pos':'tag-neg'}" style="margin:4px 4px 4px 0">${w} ${diff>0?'+':''}${diff.toFixed(2)}</span>`
+  ).join(' ') || '<span style="color:var(--color-text-tertiary)">（無已知情緒詞彙）</span>';
 }
 
 // ── WORD EMBEDDINGS ──────────────────────────────────────────
@@ -570,7 +631,7 @@ function runEmbed() {
   const word = document.getElementById('embed-word').value.trim();
   const vec = EMBEDDINGS[word];
   if (!vec) {
-    document.getElementById('embed-similar').textContent = '詞彙不在詞典中，試試：國王、台灣、快樂、貓';
+    document.getElementById('embed-similar').innerHTML = '<span style="color:var(--color-text-danger)">詞彙不在詞典中，試試：國王、台灣、快樂、貓</span>';
     return;
   }
   const sims = Object.entries(EMBEDDINGS)
@@ -581,7 +642,7 @@ function runEmbed() {
   document.getElementById('embed-similar').innerHTML = sims.map(({w, sim}) =>
     `<div class="prob-row">
       <span class="prob-label">${w}</span>
-      <div class="prob-bar-bg"><div class="prob-bar" style="width:${((sim+1)/2*100).toFixed(0)}%"></div></div>
+      <div class="prob-bar-bg"><div class="prob-bar" style="width:${((sim+1)/2*100).toFixed(0)}%; background: #1D9E75;"></div></div>
       <span class="prob-pct">${sim.toFixed(3)}</span>
     </div>`
   ).join('');
@@ -593,14 +654,14 @@ function runVecOp() {
   const b = document.getElementById('vec-b').value.trim();
   const c = document.getElementById('vec-c').value.trim();
   const va = EMBEDDINGS[a], vb = EMBEDDINGS[b], vc = EMBEDDINGS[c];
-  if (!va||!vb||!vc) { document.getElementById('vec-result').textContent = '請確認詞彙在詞典中'; return; }
+  if (!va||!vb||!vc) { document.getElementById('vec-result').innerHTML = '<span style="color:var(--color-text-danger)">請確認詞彙在詞典中</span>'; return; }
   const target = vecAdd(vecSub(va,vb),vc);
   const sims = Object.entries(EMBEDDINGS)
     .filter(([w]) => w!==a&&w!==b&&w!==c)
     .map(([w,v]) => ({ w, sim: cosineSim(target,v) }))
     .sort((a,b) => b.sim-a.sim).slice(0,3);
   document.getElementById('vec-result').innerHTML =
-    `<strong>${a} − ${b} + ${c} ≈</strong><br>` +
+    `<strong style="color:var(--color-text-info)">${a} − ${b} + ${c} ≈</strong><br><br>` +
     sims.map(({w,sim}) => `<span class="cand ${sims.indexOf({w,sim})===0?'top':''}">${w} ${sim.toFixed(3)}</span>`).join(' ');
 }
 
@@ -611,47 +672,67 @@ function drawEmbedCanvas(highlight) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const textColor = isDark ? '#e0e0e0' : '#333';
-  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-  const axisColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  // 取得 CSS 變數中的顏色來畫圖，讓 Canvas 也支援深色模式
+  const computedStyle = getComputedStyle(document.body);
+  const textColor = computedStyle.getPropertyValue('--color-text-primary').trim();
+  const gridColor = computedStyle.getPropertyValue('--color-border-tertiary').trim();
+  const axisColor = computedStyle.getPropertyValue('--color-border-secondary').trim();
 
-  const toX = v => (v + 1) / 2 * (W - 60) + 30;
-  const toY = v => (1 - (v + 1) / 2) * (H - 40) + 20;
+  const toX = v => (v + 1) / 2 * (W - 80) + 40;
+  const toY = v => (1 - (v + 1) / 2) * (H - 60) + 30;
 
+  // 畫網格
   for (let g = -0.5; g <= 1; g += 0.5) {
-    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(toX(-1), toY(g)); ctx.lineTo(toX(1), toY(g)); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(toX(g), toY(-1)); ctx.lineTo(toX(g), toY(1)); ctx.stroke();
   }
-  ctx.strokeStyle = axisColor; ctx.lineWidth = 1;
+  
+  // 畫十字軸
+  ctx.strokeStyle = axisColor; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(toX(-1), toY(0)); ctx.lineTo(toX(1), toY(0)); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(toX(0), toY(-1)); ctx.lineTo(toX(0), toY(1)); ctx.stroke();
 
-  const colors = ['#378ADD','#1D9E75','#D85A30','#BA7517','#993556'];
   const groups = [
     { words: ['國王','女王','男人','女人'], color: '#378ADD' },
     { words: ['台灣','日本','中國','美國'], color: '#1D9E75' },
     { words: ['快樂','悲傷','幸福','痛苦'], color: '#D85A30' },
     { words: ['貓','狗','鳥','魚'], color: '#BA7517' },
     { words: ['蘋果','橘子','香蕉'], color: '#993556' },
-    { words: ['山','海','天空'], color: '#534AB7' },
+    { words: ['山','海','天空'], color: '#6366f1' },
   ];
 
   Object.entries(EMBEDDINGS).forEach(([w, [x, y]]) => {
     const grp = groups.find(g => g.words.includes(w));
     const col = grp ? grp.color : '#888';
     const isHL = w === highlight;
+    
+    // 畫點
     ctx.beginPath();
-    ctx.arc(toX(x), toY(y), isHL ? 7 : 4, 0, Math.PI*2);
-    ctx.fillStyle = col + (isHL ? 'ff' : 'cc');
+    ctx.arc(toX(x), toY(y), isHL ? 8 : 5, 0, Math.PI*2);
+    ctx.fillStyle = col + (isHL ? 'ff' : 'dd');
     ctx.fill();
-    if (isHL) { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); }
+    
+    // 如果是高亮，加上外圈
+    if (isHL) { 
+        ctx.strokeStyle = textColor; 
+        ctx.lineWidth = 2; 
+        ctx.stroke(); 
+    }
+    
+    // 畫文字
     ctx.fillStyle = textColor;
-    ctx.font = `${isHL?'500 ':''}11px var(--font-sans)`;
-    ctx.fillText(w, toX(x)+8, toY(y)+4);
+    ctx.font = `${isHL?'bold ':''}14px var(--font-sans)`;
+    ctx.fillText(w, toX(x)+10, toY(y)+5);
   });
 }
+
+// 監聽系統的深淺色切換，重繪 Canvas
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if(document.getElementById('panel-embed').classList.contains('active')) {
+        drawEmbedCanvas();
+    }
+});
 
 // initial calls
 runMarkov();
