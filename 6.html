@@ -6,134 +6,144 @@
 <title>非 Transformer 語言模型互動探索器</title>
 <style>
 /* =========================================
-   1. 定義 CSS 變數 (Light & Dark Mode)
+   1. 定義 CSS 變數與基礎色彩
    ========================================= */
 :root {
-  /* 字體設定 */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Consolas, monospace;
   
-  /* 圓角設定 */
   --border-radius-md: 8px;
-  --border-radius-lg: 12px;
+  --border-radius-lg: 16px;
 
-  /* 淺色模式色彩 (Light Mode) */
-  --color-background-page: #f3f4f6;      /* 網頁底色 */
-  --color-background-primary: #ffffff;   /* 卡片底色 */
-  --color-background-secondary: #f3f4f6; /* 次要區塊底色 (如: result-box) */
+  --color-background-page: #eef2f6;      /* 網頁背景：帶有一點灰藍的底色，凸顯卡片 */
+  --color-background-primary: #ffffff;   /* 卡片背景：純白 */
+  --color-background-secondary: #f8fafc; /* 次要區塊：極淺灰 */
   --color-background-info: #eff6ff;
   --color-background-success: #f0fdf4;
   --color-background-danger: #fef2f2;
 
-  --color-border-secondary: #e5e7eb;
-  --color-border-tertiary: #f3f4f6;
+  --color-border-secondary: #e2e8f0;
+  --color-border-tertiary: #cbd5e1;
   --color-border-info: #3b82f6;
 
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-tertiary: #9ca3af;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
   --color-text-info: #1d4ed8;
   --color-text-success: #15803d;
   --color-text-danger: #b91c1c;
 
-  /* 陰影 */
+  /* 強化的陰影，讓卡片浮出來 */
+  --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* 深色模式色彩 (Dark Mode) - 根據系統自動切換 */
+/* 深色模式自動切換 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background-page: #111827;
-    --color-background-primary: #1f2937;
-    --color-background-secondary: #374151;
+    --color-background-page: #0f172a;
+    --color-background-primary: #1e293b;
+    --color-background-secondary: #334155;
     --color-background-info: #1e3a8a;
     --color-background-success: #064e3b;
     --color-background-danger: #7f1d1d;
 
-    --color-border-secondary: #4b5563;
-    --color-border-tertiary: #374151;
+    --color-border-secondary: #475569;
+    --color-border-tertiary: #334155;
     --color-border-info: #3b82f6;
 
-    --color-text-primary: #f9fafb;
-    --color-text-secondary: #d1d5db;
-    --color-text-tertiary: #9ca3af;
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-tertiary: #94a3b8;
     --color-text-info: #bfdbfe;
     --color-text-success: #bbf7d0;
     --color-text-danger: #fecaca;
+    
+    --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
   }
 }
 
 /* =========================================
-   2. 基礎排版與原有樣式美化
+   2. 網頁佈局與置中 (Body & Container)
    ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body { 
   font-family: var(--font-sans); 
   background-color: var(--color-background-page);
   color: var(--color-text-primary);
+  /* 使用 Flexbox 確保垂直與水平置中，加上 padding 避免螢幕太小時貼邊 */
   display: flex;
   justify-content: center;
-  padding: 2rem 1rem;
-  line-height: 1.5;
+  align-items: flex-start; /* 讓內容太長時可以正常往下捲動 */
+  min-height: 100vh;
+  padding: 3rem 1.5rem;
+  line-height: 1.6;
 }
 
-/* 讓主容器變成一個有質感的置中卡片 */
 .container { 
   width: 100%;
-  max-width: 800px;
+  max-width: 850px; /* 稍微加寬一點，讓內容有呼吸空間 */
   background: var(--color-background-primary);
-  padding: 2rem;
+  padding: 2.5rem;
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card);
 }
 
-h2 { margin-bottom: 1.5rem; font-size: 24px; font-weight: 600; }
-.sr-only { display: none; } /* 如果你想顯示標題，可以把這行移除 */
+h2 { margin-bottom: 1.5rem; font-size: 26px; font-weight: 700; text-align: center; color: var(--color-text-primary); }
 
-.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border-secondary); padding-bottom: 1rem;}
+/* =========================================
+   3. 頁籤與內容區塊
+   ========================================= */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; border-bottom: 2px solid var(--color-border-secondary); padding-bottom: 1rem;}
 .tab-btn {
   padding: 8px 16px; border-radius: var(--border-radius-md);
-  border: 1px solid var(--color-border-secondary);
-  background: var(--color-background-primary);
-  color: var(--color-text-secondary); font-size: 14px; cursor: pointer;
+  border: 1px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary); font-size: 15px; cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 500;
+}
+.tab-btn:hover { background: var(--color-border-secondary); }
+.tab-btn.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
   box-shadow: var(--shadow-sm);
 }
-.tab-btn:hover { 
-  background: var(--color-background-secondary); 
-  transform: translateY(-1px);
-}
-.tab-btn.active {
-  background: var(--color-background-info);
-  color: var(--color-text-info);
-  border-color: var(--color-border-info); font-weight: 600;
-  box-shadow: none;
-}
 
-.panel { display: none; animation: fadeIn 0.3s ease; }
+.panel { display: none; animation: fadeIn 0.4s ease; }
 .panel.active { display: block; }
-
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.era-badge {
-  display: inline-block; font-size: 12px; font-weight: 500; padding: 4px 10px;
-  border-radius: 20px; margin-bottom: 16px;
+/* 歷史流派說明區塊 */
+.history-quote {
+  border-left: 4px solid var(--color-text-tertiary);
+  padding: 12px 16px;
   background: var(--color-background-secondary);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 1.5rem;
+  font-size: 14px;
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-secondary);
+}
+.history-quote strong { color: var(--color-text-primary); }
+
+.era-badge {
+  display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 12px;
+  border-radius: 20px; margin-bottom: 12px;
+  background: var(--color-text-primary);
+  color: var(--color-background-primary);
 }
 
-.desc { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
-.model-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--color-text-primary); }
+.model-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--color-text-primary); }
 
-.input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .input-row input, .input-row select, textarea {
   flex: 1; min-width: 180px; padding: 10px 14px;
-  border: 1px solid var(--color-border-secondary);
+  border: 1px solid var(--color-border-tertiary);
   border-radius: var(--border-radius-md);
   background: var(--color-background-primary);
   color: var(--color-text-primary); font-size: 15px;
@@ -143,43 +153,42 @@ h2 { margin-bottom: 1.5rem; font-size: 24px; font-weight: 600; }
 .input-row input:focus, .input-row select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-border-info);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .run-btn {
-  padding: 10px 20px; border-radius: var(--border-radius-md);
+  padding: 10px 24px; border-radius: var(--border-radius-md);
   border: none;
-  background: #378ADD;
+  background: #0ea5e9;
   color: white; font-size: 15px; cursor: pointer;
   font-weight: 600; white-space: nowrap;
   transition: background 0.2s, transform 0.1s;
   box-shadow: var(--shadow-sm);
 }
-.run-btn:hover { background: #2870b8; }
-.run-btn:active { transform: scale(0.98); }
+.run-btn:hover { background: #0284c7; }
+.run-btn:active { transform: scale(0.97); }
 
 .result-box {
   background: var(--color-background-secondary);
-  border-radius: var(--border-radius-lg);
-  padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; min-height: 80px;
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem; margin-bottom: 1.25rem; min-height: 80px;
   border: 1px solid var(--color-border-secondary);
 }
-.result-label { font-size: 13px; font-weight: 600; color: var(--color-text-tertiary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.result-label { font-size: 13px; font-weight: 700; color: var(--color-text-tertiary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
 .result-text { font-size: 16px; color: var(--color-text-primary); line-height: 1.8; }
 
-.token { display: inline-block; margin: 2px; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
 .candidates { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .cand {
   font-size: 13px; padding: 4px 10px; border-radius: 20px;
   background: var(--color-background-primary);
-  border: 1px solid var(--color-border-secondary);
+  border: 1px solid var(--color-border-tertiary);
   color: var(--color-text-secondary);
 }
 .cand.top { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); font-weight: 600; }
 
 .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .slider-row label { font-size: 14px; font-weight: 500; color: var(--color-text-secondary); min-width: 100px; }
-.slider-row input[type=range] { flex: 1; cursor: pointer; accent-color: #378ADD;}
+.slider-row input[type=range] { flex: 1; cursor: pointer; accent-color: #0ea5e9;}
 .slider-val { font-size: 14px; font-weight: 600; min-width: 40px; color: var(--color-text-primary); text-align: right;}
 
 .info-box {
@@ -193,24 +202,21 @@ h2 { margin-bottom: 1.5rem; font-size: 24px; font-weight: 600; }
 .prob-bar-wrap { margin: 10px 0; }
 .prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .prob-label { font-size: 14px; font-weight: 500; min-width: 60px; color: var(--color-text-primary); }
-.prob-bar-bg { flex: 1; height: 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-secondary); border-radius: 6px; overflow: hidden; }
-.prob-bar { height: 100%; background: #378ADD; border-radius: 4px; transition: width 0.4s ease-out; }
+.prob-bar-bg { flex: 1; height: 12px; background: var(--color-border-secondary); border-radius: 6px; overflow: hidden; }
+.prob-bar { height: 100%; background: #0ea5e9; border-radius: 6px; transition: width 0.4s ease-out; }
 .prob-pct { font-size: 13px; font-family: var(--font-mono); color: var(--color-text-secondary); min-width: 45px; text-align: right; }
-
-.section-sep { border: none; border-top: 1px solid var(--color-border-secondary); margin: 1.5rem 0; }
 
 textarea {
   width: 100%; padding: 12px 16px; border-radius: var(--border-radius-md);
-  border: 1px solid var(--color-border-secondary);
+  border: 1px solid var(--color-border-tertiary);
   background: var(--color-background-primary);
   color: var(--color-text-primary); font-size: 15px;
   resize: vertical; margin-bottom: 1rem;
 }
 
-.tag { font-size: 13px; font-weight: 500; padding: 4px 8px; border-radius: var(--border-radius-md); display: inline-block; border: 1px solid transparent;}
+.tag { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-block; border: 1px solid transparent;}
 .tag-pos { background: var(--color-background-success); color: var(--color-text-success); border-color: #bbf7d0;}
 .tag-neg { background: var(--color-background-danger); color: var(--color-text-danger); border-color: #fecaca;}
-.tag-neu { background: var(--color-background-secondary); color: var(--color-text-secondary); border-color: var(--color-border-secondary);}
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
@@ -219,7 +225,7 @@ textarea {
 <body>
 
 <div class="container">
-<h2 style="text-align: center; margin-bottom: 30px;">NLP 經典演算法互動探索器</h2>
+<h2>NLP 經典演算法探索器 (Pre-Transformer)</h2>
 
 <div class="tabs" id="tabs">
   <button class="tab-btn active" data-tab="markov">馬可夫模型</button>
@@ -227,21 +233,25 @@ textarea {
   <button class="tab-btn" data-tab="cfg">CFG 文法</button>
   <button class="tab-btn" data-tab="tfidf">TF-IDF</button>
   <button class="tab-btn" data-tab="naive">貝氏分類</button>
-  <button class="tab-btn" data-tab="embed">詞向量</button>
+  <button class="tab-btn" data-tab="embed">詞向量空間</button>
 </div>
 
 <div class="panel active" id="panel-markov">
-  <div class="era-badge">統計語言學 1990s</div>
-  <div class="model-title">N-gram 馬可夫模型（Bigram / Trigram）</div>
-  <div class="desc">用前 N 個詞的條件機率預測下一個詞。語料越大，效果越好。這裡用內建語料示範「自回歸生成」。</div>
+  <div class="era-badge">1990s 統計語言學</div>
+  <div class="model-title">N-gram 馬可夫語言模型</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>1990 年代起，NLP 揚棄了手寫規則，轉向「機率與統計」。N-gram 語言模型的核心精神是：機器不需理解文法，只要從巨量文本中統計「字詞接龍」的機率。馬可夫假設（Markov Assumption）認為，<strong>下一個字只跟它前面的 N 個字有關</strong>。
+  </div>
+
   <div class="input-row">
-    <input type="text" id="markov-prompt" placeholder="輸入起始字（如：今天、我覺得、春天）" value="今天天氣">
+    <input type="text" id="markov-prompt" placeholder="輸入起始字（如：今天、我覺得）" value="今天天氣">
     <select id="markov-n">
-      <option value="1">Bigram（前1詞）</option>
-      <option value="2" selected>Trigram（前2詞）</option>
-      <option value="3">4-gram（前3詞）</option>
+      <option value="1">Bigram（看前1字預測）</option>
+      <option value="2" selected>Trigram（看前2字預測）</option>
+      <option value="3">4-gram（看前3字預測）</option>
     </select>
-    <button class="run-btn" onclick="runMarkov()">生成</button>
+    <button class="run-btn" onclick="runMarkov()">生成文字</button>
   </div>
   <div class="slider-row">
     <label>Temperature</label>
@@ -255,125 +265,139 @@ textarea {
   </div>
   <div class="result-box">
     <div class="result-label">生成結果</div>
-    <div class="result-text" id="markov-out">點擊「生成」查看結果</div>
+    <div class="result-text" id="markov-out">點擊「生成文字」查看結果</div>
   </div>
   <div class="result-box">
-    <div class="result-label">每步候選字（依機率排序）</div>
+    <div class="result-label">引擎內部：每步機率決策 (Top Candidates)</div>
     <div id="markov-steps" style="font-size:14px; color: var(--color-text-secondary); line-height: 2;">—</div>
   </div>
-  <div class="info-box">原理：P(下一詞 | 前N詞)，從語料中統計條件頻次再正規化為機率分布。Temperature 越高輸出越多樣，越低越保守（接近 greedy）。</div>
 </div>
 
 <div class="panel" id="panel-regex">
-  <div class="era-badge">規則為本 1950-1980s</div>
-  <div class="model-title">正則表達式（Regex）規則引擎</div>
-  <div class="desc">透過手寫規則匹配句型，然後套用模板填入答案。這是早期聊天機器人（ELIZA）的核心技術。</div>
+  <div class="era-badge">1950-1980s 規則為本 (Rule-based)</div>
+  <div class="model-title">正則表達式（Regex）對話系統</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>NLP 最早期的做法。科學家認為語言是一套嚴格的邏輯系統。透過手寫「正則表達式」來捕捉使用者的特定句型，再套用預設模板回應。1966 年著名的心理治療聊天機器人 <strong>ELIZA</strong> 就是完全靠此技術運作，它完全不懂語意，但能偽裝成聽懂的樣子。
+  </div>
+
   <div class="input-row">
-    <input type="text" id="regex-input" placeholder="輸入一句話，試試規則匹配..." value="我喜歡吃蘋果">
-    <button class="run-btn" onclick="runRegex()">分析</button>
+    <input type="text" id="regex-input" placeholder="輸入一句話，例如：我超喜歡吃蘋果" value="我喜歡吃蘋果">
+    <button class="run-btn" onclick="runRegex()">分析句型</button>
   </div>
   <div class="result-box">
-    <div class="result-label">匹配到的規則 → 回應模板</div>
+    <div class="result-label">系統回應分析</div>
     <div class="result-text" id="regex-out">—</div>
   </div>
   <div id="regex-rules-list" style="margin-top:10px;"></div>
-  <div class="info-box">優點：速度極快、完全可解釋。缺點：無法處理未見過的句型，無法理解語意，維護成本極高。</div>
 </div>
 
 <div class="panel" id="panel-cfg">
-  <div class="era-badge">符號 NLP 1960-1980s</div>
-  <div class="model-title">上下文無關文法（CFG）句型生成器</div>
-  <div class="desc">用手寫的產生式規則（Production Rules）隨機展開句子結構，能產出「文法正確」但可能語意奇怪的句子。</div>
+  <div class="era-badge">1960-1980s 符號與專家系統</div>
+  <div class="model-title">上下文無關文法 (CFG) 產生器</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>語言學大師喬姆斯基（Noam Chomsky）提出的理論影響了整個電腦科學。科學家嘗試將語言拆解成「主詞 (NP) + 動詞 (VP)」等樹狀結構。只要定義好這棵樹的生成規則 (Production Rules)，電腦就能產出無限多句「文法正確，但語意可能很荒謬」的句子。
+  </div>
+
   <div class="input-row">
     <select id="cfg-start">
-      <option value="S">完整句子（S）</option>
-      <option value="NP">名詞組（NP）</option>
-      <option value="VP">動詞組（VP）</option>
+      <option value="S">生成完整句子（S）</option>
+      <option value="NP">生成名詞組（NP）</option>
+      <option value="VP">生成動詞組（VP）</option>
     </select>
-    <button class="run-btn" onclick="runCFG()">展開</button>
+    <button class="run-btn" onclick="runCFG()">隨機展開結構</button>
   </div>
   <div class="result-box">
-    <div class="result-label">生成句子</div>
+    <div class="result-label">最終生成句子</div>
     <div class="result-text" id="cfg-out">—</div>
   </div>
   <div class="result-box">
-    <div class="result-label">展開過程（產生式推導）</div>
+    <div class="result-label">Syntax Tree 推導軌跡</div>
     <div id="cfg-trace" style="font-size:14px; line-height:1.8; color: var(--color-text-secondary); font-family: var(--font-mono);">—</div>
   </div>
-  <div class="info-box">CFG 規則格式：左側符號 → 右側展開（可以是終端詞或其他非終端符號）。可用來做語法解析、驗證句子結構。</div>
 </div>
 
 <div class="panel" id="panel-tfidf">
-  <div class="era-badge">統計 NLP 1990s</div>
-  <div class="model-title">TF-IDF 關鍵字抽取</div>
-  <div class="desc">計算詞在文件中的重要程度。TF（詞頻）× IDF（逆文件頻率）= 這個詞對本文有多獨特。</div>
+  <div class="era-badge">1990s 統計 NLP</div>
+  <div class="model-title">TF-IDF 關鍵字提取演算法</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>隨著網路資料量爆炸，如何從海量文章中抓重點成為難題。TF-IDF 提出了一個絕妙的概念：如果一個字在本文出現很多次（TF 高），但在全網其他文章中很少見（IDF 高），那這個字絕對是這篇文章的「靈魂關鍵字」。這是 Google 早期搜尋引擎排序的核心基石。
+  </div>
+
   <textarea id="tfidf-doc" rows="4" placeholder="輸入一段文字...">今天台灣天氣很好，台灣的山很美，台灣人都很友善。我喜歡在台灣旅行，旅行讓我快樂。</textarea>
   <div style="margin: 8px 0;">
-    <button class="run-btn" onclick="runTFIDF()">計算 TF-IDF</button>
+    <button class="run-btn" onclick="runTFIDF()">計算 TF-IDF 權重</button>
   </div>
   <div class="result-box">
     <div class="result-label">詞彙重要度排行</div>
     <div id="tfidf-out">—</div>
   </div>
-  <div class="info-box">IDF = log(總文件數 / 含此詞的文件數)。越稀有的詞 IDF 越高；「的、了、我」這類常見詞 IDF 很低，自動被壓低。</div>
 </div>
 
 <div class="panel" id="panel-naive">
-  <div class="era-badge">統計 NLP 1990s</div>
-  <div class="model-title">Naive Bayes 情感分類</div>
-  <div class="desc">用詞頻統計算出「這句話屬於正面/負面情感」的機率。已內建簡易訓練集，輸入句子即可分類。</div>
+  <div class="era-badge">1990s 傳統機器學習</div>
+  <div class="model-title">Naive Bayes 貝氏情感分類器</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>將文字變成「詞頻矩陣 (Bag of Words)」後，NLP 開始與機器學習接軌。貝氏分類器做了一個大膽的「天真 (Naive)」假設：假設句子裡每個詞的出現都是獨立的。它靠著計算每個詞出現在「正面」和「負面」類別中的歷史機率，相乘後來預測整句話的情緒。這曾是過濾垃圾郵件的王者技術。
+  </div>
+
   <div class="input-row">
-    <input type="text" id="nb-input" placeholder="輸入一句話..." value="這個產品品質很好，我很喜歡">
-    <button class="run-btn" onclick="runNB()">分類</button>
+    <input type="text" id="nb-input" placeholder="輸入一句話來測試情感..." value="這個產品品質很好，雖然有點貴，但我很喜歡">
+    <button class="run-btn" onclick="runNB()">情緒分類</button>
   </div>
   <div class="result-box">
-    <div class="result-label">分類結果</div>
+    <div class="result-label">分類器決策結果</div>
     <div class="result-text" id="nb-out">—</div>
   </div>
   <div class="result-box">
-    <div class="result-label">關鍵詞貢獻度（對數機率）</div>
-    <div id="nb-words" style="line-height: 2;">—</div>
+    <div class="result-label">各詞彙對情緒的貢獻度 (Log Probability)</div>
+    <div id="nb-words" style="line-height: 2.2;">—</div>
   </div>
-  <div class="info-box">Naive Bayes 假設各詞彼此獨立（這是「天真」假設），所以叫 Naïve。P(類別|句子) ∝ P(類別) × ∏ P(詞|類別)。</div>
 </div>
 
 <div class="panel" id="panel-embed">
-  <div class="era-badge">詞向量革命 2013</div>
-  <div class="model-title">詞向量語意相似度（Word Embeddings 概念示範）</div>
-  <div class="desc">用預設的 2D 詞向量模擬 Word2Vec 語意空間。語意相近的詞在向量空間中距離更近，還可做向量運算。</div>
+  <div class="era-badge">2013 深度學習前夕的革命</div>
+  <div class="model-title">Word Embeddings 詞向量空間</div>
+  
+  <div class="history-quote">
+    <strong>歷史脈絡：</strong>NLP 的一次終極典範轉移。傳統方法把「蘋果」和「橘子」當作毫無關聯的兩個 ID。但 Google 提出的 Word2Vec 證明，透過分析上下文，我們可以把每一個詞變成空間中的「向量座標」。如此一來，距離相近的詞語意就相近，甚至可以做語意數學：<code>國王 - 男人 + 女人 ≈ 女王</code>。這是當今所有 LLM (包含 Transformer) 懂人類語言的最底層基石。
+  </div>
+
   <div class="input-row">
     <input type="text" id="embed-word" placeholder="查詢詞（如：國王、台灣、快樂）" value="國王">
-    <button class="run-btn" onclick="runEmbed()">找相近詞</button>
+    <button class="run-btn" onclick="runEmbed()">搜尋空間相近詞</button>
   </div>
   <div class="grid2">
     <div class="result-box">
-      <div class="result-label">最相近的詞（餘弦相似度）</div>
+      <div class="result-label">最相近的詞（Cosine Similarity）</div>
       <div id="embed-similar">—</div>
     </div>
     <div class="result-box">
-      <div class="result-label">向量運算</div>
+      <div class="result-label">向量代數運算</div>
       <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
-        <input type="text" id="vec-a" value="國王" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
+        <input type="text" id="vec-a" value="國王" style="width:75px; padding:6px 10px;">
         <span style="font-weight:600; color:var(--color-text-secondary);">−</span>
-        <input type="text" id="vec-b" value="男人" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
+        <input type="text" id="vec-b" value="男人" style="width:75px; padding:6px 10px;">
         <span style="font-weight:600; color:var(--color-text-secondary);">+</span>
-        <input type="text" id="vec-c" value="女人" style="width:75px; padding:6px 10px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:14px;">
-        <button class="run-btn" onclick="runVecOp()" style="padding:6px 14px; font-size:14px;">計算</button>
+        <input type="text" id="vec-c" value="女人" style="width:75px; padding:6px 10px;">
+        <button class="run-btn" onclick="runVecOp()" style="padding:6px 14px; font-size:14px;">= 計算</button>
       </div>
       <div id="vec-result" style="font-size:15px; color: var(--color-text-primary); line-height: 1.8;">—</div>
     </div>
   </div>
   <div class="result-box">
-    <div class="result-label">詞向量空間（2D 視覺化）</div>
+    <div class="result-label">2D 詞向量降維視覺化 (模擬)</div>
     <canvas id="embed-canvas" width="620" height="280" style="width:100%; height:auto; background: var(--color-background-primary); border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary);"></canvas>
   </div>
-  <div class="info-box">真實的 Word2Vec 是 300 維向量，這裡用 2D 示範概念。向量的方向和長度都有語意意義。</div>
 </div>
 
 </div>
 
 <script>
-// 以下為你原有的 JavaScript 邏輯，完全保留未動
+// ── UI 切換邏輯 ──────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -384,7 +408,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ── CORPUS ──────────────────────────────────────────────────
+// ── CORPUS & MARKOV ─────────────────────────────────────────
 const CORPUS = `今天天氣很好 我喜歡今天的天氣 今天我去爬山 山上風景很美 美麗的台灣山脈 台灣是個美麗的島嶼 島嶼四面環海 海邊風景怡人 天氣晴朗心情好 心情好就去旅行 旅行讓人快樂 快樂是幸福的源泉 幸福需要努力 努力才能成功 成功的人都很努力 台灣的食物很好吃 好吃的東西讓人快樂 今天吃了很多好吃的東西 天空很藍海很深 深山裡有很多動物 動物和人類共存 今天是個好日子 好日子值得珍惜 春天來了花開了 花開的時候很美 美好的事物值得分享 分享帶來快樂 快樂要和大家分享 我喜歡台灣的文化 文化是民族的根 根深才能枝葉茂盛`;
 
 function buildNgram(text, n) {
@@ -444,7 +468,7 @@ function runMarkov() {
       return `<span style="${col}">${c}</span>`;
     }).join('');
 
-  document.getElementById('markov-steps').innerHTML = steps.slice(0,8).map(s =>
+  document.getElementById('markov-steps').innerHTML = steps.slice(0,6).map(s =>
     `<div style="margin-bottom:6px"><span style="color:var(--color-text-info);font-weight:600;font-family:var(--font-mono)">「${s.ctx}」→</span> ` +
     s.top3.map((([w,p],i) => `<span class="${i===0?'cand top':'cand'}">${w} ${(p*100).toFixed(0)}%</span>`)).join('') +
     ` <span style="color:var(--color-text-danger); font-weight: 600;">✓${s.chosen}</span></div>`
@@ -469,16 +493,16 @@ function runRegex() {
   for (const rule of RULES) {
     const m = input.match(rule.pattern);
     if (m) {
-      html = `<span class="tag tag-pos">✓ 匹配規則：${rule.label}</span><br><br><strong>回應：</strong> <span style="color:var(--color-text-info);font-weight:500;">${rule.response(m)}</span>`;
+      html = `<span class="tag tag-pos">✓ 觸發規則：${rule.label}</span><br><br><strong>系統回應模板：</strong> <span style="color:var(--color-text-info);font-weight:500;">${rule.response(m)}</span>`;
       matched = true;
       break;
     }
   }
-  if (!matched) html = `<span class="tag tag-neg">✗ 無匹配規則</span><br><br>系統無法處理此輸入，需要語言學家手動新增規則。`;
+  if (!matched) html = `<span class="tag tag-neg">✗ 無匹配規則</span><br><br>系統聽不懂。在那個年代，遇到這種狀況只能請工程師加班寫新的 Regex。`;
   document.getElementById('regex-out').innerHTML = html;
 
   document.getElementById('regex-rules-list').innerHTML =
-    '<div style="font-size:13px;color:var(--color-text-secondary);margin-top:12px; line-height: 2;">現有規則：' +
+    '<div style="font-size:13px;color:var(--color-text-secondary);margin-top:12px; line-height: 2;">系統寫死的規則庫：' +
     RULES.map(r => `<code style="font-family:var(--font-mono);background:var(--color-background-primary);border: 1px solid var(--color-border-secondary);padding:3px 6px;border-radius:6px;margin:2px;display:inline-block">${r.label}</code>`).join(' ') + '</div>';
 }
 
@@ -489,9 +513,9 @@ const CFG = {
   VP: [['V', 'NP'], ['V', 'Adj'], ['V']],
   PP: [['P', 'NP']],
   Det: [['這個'], ['一個'], ['那隻'], ['我的'], ['台灣的']],
-  N:  [['貓咪'], ['學生'], ['程式設計師'], ['天空'], ['山脈'], ['朋友'], ['老師']],
-  Adj:[['快樂的'], ['聰明的'], ['美麗的'], ['努力的'], ['懶惰的']],
-  V:  [['喜歡'], ['看見'], ['幫助'], ['研究'], ['忘記'], ['理解']],
+  N:  [['貓咪'], ['學生'], ['程式設計師'], ['天空'], ['山脈'], ['朋友'], ['電腦']],
+  Adj:[['快樂的'], ['聰明的'], ['美麗的'], ['瘋狂的'], ['懶惰的']],
+  V:  [['喜歡'], ['看見'], ['幫助'], ['修理'], ['忘記'], ['理解']],
   P:  [['在'], ['和'], ['關於']],
 };
 
@@ -507,7 +531,7 @@ function runCFG() {
   const start = document.getElementById('cfg-start').value;
   const trace = [];
   const result = expandCFG(start, trace);
-  document.getElementById('cfg-out').innerHTML = `<strong style="color:var(--color-text-info);">${result}</strong>`;
+  document.getElementById('cfg-out').innerHTML = `<strong style="color:var(--color-text-info); font-size:18px;">${result}</strong>`;
   document.getElementById('cfg-trace').innerHTML = trace.map((t,i) =>
     `<div style="margin-left:${i*12}px; color: ${i===0?'var(--color-text-primary)':'var(--color-text-secondary)'}">↳ ${t}</div>`
   ).join('');
@@ -543,7 +567,7 @@ function runTFIDF() {
 
   const scores = vocab.map(w => ({ w, tf: tf[w], idf: idf[w], tfidf: tf[w] * idf[w] }));
   scores.sort((a,b) => b.tfidf - a.tfidf);
-  const top = scores.slice(0, 10);
+  const top = scores.slice(0, 8);
   const maxScore = top[0]?.tfidf || 1;
 
   document.getElementById('tfidf-out').innerHTML = top.map(({w, tf: t, idf: d, tfidf: s}) =>
@@ -559,7 +583,7 @@ function runTFIDF() {
 // ── NAIVE BAYES ──────────────────────────────────────────────
 const NB_TRAIN = {
   pos: '好吃 喜歡 快樂 美好 幸福 開心 棒 優秀 讚 有趣 精彩 舒適 滿意 推薦 好用 方便 厲害 感謝 漂亮 美麗 成功 順利 完美 享受',
-  neg: '難吃 討厭 痛苦 糟糕 失敗 生氣 爛 差勁 失望 無聊 煩惱 可惡 後悔 抱怨 壞掉 麻煩 困難 可怕 噁心 難受 遺憾 傷心 沮喪 失落'
+  neg: '難吃 討厭 痛苦 糟糕 失敗 生氣 爛 差勁 失望 無聊 煩惱 可惡 後悔 抱怨 壞掉 麻煩 困難 可怕 噁心 難受 遺憾 傷心 沮喪 失落 貴'
 };
 
 function buildNBModel() {
@@ -577,7 +601,11 @@ const NB_MODEL = buildNBModel();
 
 function runNB() {
   const input = document.getElementById('nb-input').value;
-  const words = tokenize(input).filter(w => !STOPWORDS.has(w));
+  // 為了展示效果，這裡做一個超暴力的中文詞彙切分（只要是在訓練集裡的詞就抓出來）
+  let words = [];
+  const vocabList = Object.keys({...NB_MODEL.counts.pos, ...NB_MODEL.counts.neg});
+  vocabList.forEach(v => { if(input.includes(v)) words.push(v); });
+
   const {counts, totals} = NB_MODEL;
   const vocab = Object.keys({...counts.pos, ...counts.neg});
 
@@ -591,26 +619,32 @@ function runNB() {
     wordContribs.push({ w, diff: pPos - pNeg });
   });
 
+  if(words.length === 0) {
+      document.getElementById('nb-out').innerHTML = "句子中未檢測到系統認識的情緒詞彙。";
+      document.getElementById('nb-words').innerHTML = "—";
+      return;
+  }
+
   const posProb = Math.exp(logPos) / (Math.exp(logPos) + Math.exp(logNeg));
   const label = posProb > 0.5 ? 'pos' : 'neg';
   document.getElementById('nb-out').innerHTML =
     `<span class="tag ${label==='pos'?'tag-pos':'tag-neg'}" style="font-size: 15px;">${label==='pos'?'正面情感 😊':'負面情感 😞'}</span> ` +
-    `<span style="margin-left: 10px; font-weight: 500;">信心度 ${(Math.max(posProb, 1-posProb)*100).toFixed(1)}%</span>` +
+    `<span style="margin-left: 10px; font-weight: 600;">信心度 ${(Math.max(posProb, 1-posProb)*100).toFixed(1)}%</span>` +
     `<div style="margin-top:12px;font-size:14px; font-family:var(--font-mono); background:var(--color-background-primary); padding:8px 12px; border-radius:var(--border-radius-md); border:1px solid var(--color-border-secondary); display:inline-block;">
-      <span style="color:var(--color-text-success)">正面得分: ${logPos.toFixed(2)}</span> &nbsp;|&nbsp;
-      <span style="color:var(--color-text-danger)">負面得分: ${logNeg.toFixed(2)}</span>
+      <span style="color:var(--color-text-success)">Score (+): ${logPos.toFixed(2)}</span> &nbsp;|&nbsp;
+      <span style="color:var(--color-text-danger)">Score (-): ${logNeg.toFixed(2)}</span>
     </div>`;
 
   wordContribs.sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff));
-  document.getElementById('nb-words').innerHTML = wordContribs.slice(0,8).map(({w, diff}) =>
+  document.getElementById('nb-words').innerHTML = wordContribs.map(({w, diff}) =>
     `<span class="tag ${diff>0?'tag-pos':'tag-neg'}" style="margin:4px 4px 4px 0">${w} ${diff>0?'+':''}${diff.toFixed(2)}</span>`
-  ).join(' ') || '<span style="color:var(--color-text-tertiary)">（無已知情緒詞彙）</span>';
+  ).join(' ');
 }
 
 // ── WORD EMBEDDINGS ──────────────────────────────────────────
 const EMBEDDINGS = {
   '國王': [0.8, 0.6], '女王': [0.7, -0.5], '男人': [0.5, 0.7], '女人': [0.4, -0.6],
-  '台灣': [-0.6, 0.3], '日本': [-0.7, 0.4], '中國': [-0.8, 0.2], '美國': [-0.9, 0.1],
+  '台灣': [-0.6, 0.3], '日本': [-0.7, 0.4], '韓國': [-0.8, 0.2], '美國': [-0.9, 0.1],
   '快樂': [0.1, 0.9], '悲傷': [0.1, -0.9], '幸福': [0.2, 0.85], '痛苦': [0.2, -0.85],
   '貓': [-0.2, 0.3], '狗': [-0.3, 0.4], '鳥': [-0.1, 0.5], '魚': [0.0, 0.2],
   '蘋果': [0.6, 0.1], '橘子': [0.65, 0.05], '香蕉': [0.7, 0.0],
@@ -631,18 +665,18 @@ function runEmbed() {
   const word = document.getElementById('embed-word').value.trim();
   const vec = EMBEDDINGS[word];
   if (!vec) {
-    document.getElementById('embed-similar').innerHTML = '<span style="color:var(--color-text-danger)">詞彙不在詞典中，試試：國王、台灣、快樂、貓</span>';
+    document.getElementById('embed-similar').innerHTML = '<span style="color:var(--color-text-danger); font-weight: 500;">字典中沒有這個詞，試試：國王、台灣、快樂、貓</span>';
     return;
   }
   const sims = Object.entries(EMBEDDINGS)
     .filter(([w]) => w !== word)
     .map(([w, v]) => ({ w, sim: cosineSim(vec, v) }))
-    .sort((a,b) => b.sim - a.sim).slice(0,5);
+    .sort((a,b) => b.sim - a.sim).slice(0,4);
 
   document.getElementById('embed-similar').innerHTML = sims.map(({w, sim}) =>
     `<div class="prob-row">
       <span class="prob-label">${w}</span>
-      <div class="prob-bar-bg"><div class="prob-bar" style="width:${((sim+1)/2*100).toFixed(0)}%; background: #1D9E75;"></div></div>
+      <div class="prob-bar-bg"><div class="prob-bar" style="width:${((sim+1)/2*100).toFixed(0)}%; background: #0ea5e9;"></div></div>
       <span class="prob-pct">${sim.toFixed(3)}</span>
     </div>`
   ).join('');
@@ -654,12 +688,12 @@ function runVecOp() {
   const b = document.getElementById('vec-b').value.trim();
   const c = document.getElementById('vec-c').value.trim();
   const va = EMBEDDINGS[a], vb = EMBEDDINGS[b], vc = EMBEDDINGS[c];
-  if (!va||!vb||!vc) { document.getElementById('vec-result').innerHTML = '<span style="color:var(--color-text-danger)">請確認詞彙在詞典中</span>'; return; }
+  if (!va||!vb||!vc) { document.getElementById('vec-result').innerHTML = '<span style="color:var(--color-text-danger)">請輸入預設字典中的詞彙</span>'; return; }
   const target = vecAdd(vecSub(va,vb),vc);
   const sims = Object.entries(EMBEDDINGS)
     .filter(([w]) => w!==a&&w!==b&&w!==c)
     .map(([w,v]) => ({ w, sim: cosineSim(target,v) }))
-    .sort((a,b) => b.sim-a.sim).slice(0,3);
+    .sort((a,b) => b.sim-a.sim).slice(0,2);
   document.getElementById('vec-result').innerHTML =
     `<strong style="color:var(--color-text-info)">${a} − ${b} + ${c} ≈</strong><br><br>` +
     sims.map(({w,sim}) => `<span class="cand ${sims.indexOf({w,sim})===0?'top':''}">${w} ${sim.toFixed(3)}</span>`).join(' ');
@@ -672,11 +706,10 @@ function drawEmbedCanvas(highlight) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  // 取得 CSS 變數中的顏色來畫圖，讓 Canvas 也支援深色模式
   const computedStyle = getComputedStyle(document.body);
   const textColor = computedStyle.getPropertyValue('--color-text-primary').trim();
-  const gridColor = computedStyle.getPropertyValue('--color-border-tertiary').trim();
-  const axisColor = computedStyle.getPropertyValue('--color-border-secondary').trim();
+  const gridColor = computedStyle.getPropertyValue('--color-border-secondary').trim();
+  const axisColor = computedStyle.getPropertyValue('--color-text-tertiary').trim();
 
   const toX = v => (v + 1) / 2 * (W - 80) + 40;
   const toY = v => (1 - (v + 1) / 2) * (H - 60) + 30;
@@ -689,17 +722,17 @@ function drawEmbedCanvas(highlight) {
   }
   
   // 畫十字軸
-  ctx.strokeStyle = axisColor; ctx.lineWidth = 2;
+  ctx.strokeStyle = axisColor; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(toX(-1), toY(0)); ctx.lineTo(toX(1), toY(0)); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(toX(0), toY(-1)); ctx.lineTo(toX(0), toY(1)); ctx.stroke();
 
   const groups = [
-    { words: ['國王','女王','男人','女人'], color: '#378ADD' },
-    { words: ['台灣','日本','中國','美國'], color: '#1D9E75' },
-    { words: ['快樂','悲傷','幸福','痛苦'], color: '#D85A30' },
-    { words: ['貓','狗','鳥','魚'], color: '#BA7517' },
-    { words: ['蘋果','橘子','香蕉'], color: '#993556' },
-    { words: ['山','海','天空'], color: '#6366f1' },
+    { words: ['國王','女王','男人','女人'], color: '#3b82f6' },
+    { words: ['台灣','日本','韓國','美國'], color: '#10b981' },
+    { words: ['快樂','悲傷','幸福','痛苦'], color: '#f59e0b' },
+    { words: ['貓','狗','鳥','魚'], color: '#8b5cf6' },
+    { words: ['蘋果','橘子','香蕉'], color: '#ec4899' },
+    { words: ['山','海','天空'], color: '#64748b' },
   ];
 
   Object.entries(EMBEDDINGS).forEach(([w, [x, y]]) => {
@@ -710,10 +743,10 @@ function drawEmbedCanvas(highlight) {
     // 畫點
     ctx.beginPath();
     ctx.arc(toX(x), toY(y), isHL ? 8 : 5, 0, Math.PI*2);
-    ctx.fillStyle = col + (isHL ? 'ff' : 'dd');
+    ctx.fillStyle = col + (isHL ? 'ff' : 'cc');
     ctx.fill();
     
-    // 如果是高亮，加上外圈
+    // 畫高亮框
     if (isHL) { 
         ctx.strokeStyle = textColor; 
         ctx.lineWidth = 2; 
@@ -722,12 +755,11 @@ function drawEmbedCanvas(highlight) {
     
     // 畫文字
     ctx.fillStyle = textColor;
-    ctx.font = `${isHL?'bold ':''}14px var(--font-sans)`;
+    ctx.font = `${isHL?'700 ':'500 '}14px var(--font-sans)`;
     ctx.fillText(w, toX(x)+10, toY(y)+5);
   });
 }
 
-// 監聽系統的深淺色切換，重繪 Canvas
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if(document.getElementById('panel-embed').classList.contains('active')) {
         drawEmbedCanvas();
@@ -739,7 +771,7 @@ runMarkov();
 runCFG();
 runTFIDF();
 drawEmbedCanvas();
-setTimeout(drawEmbedCanvas, 200);
+setTimeout(drawEmbedCanvas, 150);
 </script>
 </body>
 </html>
