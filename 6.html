@@ -1,8 +1,72 @@
-
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>非 Transformer 語言模型互動探索器</title>
 <style>
+/* =========================================
+   新增的 CSS 變數定義 (色彩計畫、字體、圓角)
+========================================= */
+:root {
+  /* 字體與圓角 */
+  --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, 'Microsoft JhengHei', sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+
+  /* 淺色模式 (預設) 背景色 */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f3f4f6;
+  --color-background-info: #e0f2fe;
+  --color-background-success: #dcfce7;
+  --color-background-danger: #fee2e2;
+
+  /* 淺色模式 文字顏色 */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #9ca3af;
+  --color-text-info: #0369a1;
+  --color-text-success: #15803d;
+  --color-text-danger: #b91c1c;
+
+  /* 淺色模式 邊框顏色 */
+  --color-border-secondary: #d1d5db;
+  --color-border-tertiary: #e5e7eb;
+  --color-border-info: #38bdf8;
+}
+
+/* 深色模式自動切換 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1f2937;
+    --color-background-secondary: #374151;
+    --color-background-info: #0c4a6e;
+    --color-background-success: #064e3b;
+    --color-background-danger: #7f1d1d;
+
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-tertiary: #9ca3af;
+    --color-text-info: #7dd3fc;
+    --color-text-success: #86efac;
+    --color-text-danger: #fca5a5;
+
+    --color-border-secondary: #4b5563;
+    --color-border-tertiary: #374151;
+    --color-border-info: #0284c7;
+  }
+  body {
+    background-color: #111827; /* 深色模式網頁底色 */
+  }
+}
+
+/* =========================================
+   你原本提供的 CSS 樣式
+========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-sans); }
-.container { padding: 1rem 0; }
+.container { padding: 1rem 0; max-width: 800px; margin: 0 auto; }
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .tab-btn {
   padding: 6px 14px; border-radius: var(--border-radius-md);
@@ -91,9 +155,11 @@ textarea {
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 500px) { .grid2 { grid-template-columns: 1fr; } }
 </style>
+</head>
+<body>
 
 <div class="container">
-<h2 class="sr-only">非 Transformer 語言模型互動探索器：比較規則法、馬可夫模型、TF-IDF、詞向量等方法</h2>
+<h2 class="sr-only" style="display:none;">非 Transformer 語言模型互動探索器：比較規則法、馬可夫模型、TF-IDF、詞向量等方法</h2>
 
 <div class="tabs" id="tabs">
   <button class="tab-btn active" data-tab="markov">馬可夫模型</button>
@@ -104,7 +170,6 @@ textarea {
   <button class="tab-btn" data-tab="embed">詞向量</button>
 </div>
 
-<!-- ======= MARKOV ======= -->
 <div class="panel active" id="panel-markov">
   <div class="era-badge">統計語言學 1990s</div>
   <div class="model-title">N-gram 馬可夫模型（Bigram / Trigram）</div>
@@ -139,7 +204,6 @@ textarea {
   <div class="info-box">原理：P(下一詞 | 前N詞)，從語料中統計條件頻次再正規化為機率分布。Temperature 越高輸出越多樣，越低越保守（接近 greedy）。</div>
 </div>
 
-<!-- ======= REGEX ======= -->
 <div class="panel" id="panel-regex">
   <div class="era-badge">規則為本 1950-1980s</div>
   <div class="model-title">正則表達式（Regex）規則引擎</div>
@@ -156,7 +220,6 @@ textarea {
   <div class="info-box">優點：速度極快、完全可解釋。缺點：無法處理未見過的句型，無法理解語意，維護成本極高。</div>
 </div>
 
-<!-- ======= CFG ======= -->
 <div class="panel" id="panel-cfg">
   <div class="era-badge">符號 NLP 1960-1980s</div>
   <div class="model-title">上下文無關文法（CFG）句型生成器</div>
@@ -180,7 +243,6 @@ textarea {
   <div class="info-box">CFG 規則格式：左側符號 → 右側展開（可以是終端詞或其他非終端符號）。可用來做語法解析、驗證句子結構。</div>
 </div>
 
-<!-- ======= TFIDF ======= -->
 <div class="panel" id="panel-tfidf">
   <div class="era-badge">統計 NLP 1990s</div>
   <div class="model-title">TF-IDF 關鍵字抽取</div>
@@ -196,7 +258,6 @@ textarea {
   <div class="info-box">IDF = log(總文件數 / 含此詞的文件數)。越稀有的詞 IDF 越高；「的、了、我」這類常見詞 IDF 很低，自動被壓低。</div>
 </div>
 
-<!-- ======= NAIVE BAYES ======= -->
 <div class="panel" id="panel-naive">
   <div class="era-badge">統計 NLP 1990s</div>
   <div class="model-title">Naive Bayes 情感分類</div>
@@ -216,7 +277,6 @@ textarea {
   <div class="info-box">Naive Bayes 假設各詞彼此獨立（這是「天真」假設），所以叫 Naïve。P(類別|句子) ∝ P(類別) × ∏ P(詞|類別)。</div>
 </div>
 
-<!-- ======= EMBEDDINGS ======= -->
 <div class="panel" id="panel-embed">
   <div class="era-badge">詞向量革命 2013</div>
   <div class="model-title">詞向量語意相似度（Word Embeddings 概念示範）</div>
@@ -234,9 +294,9 @@ textarea {
       <div class="result-label">向量運算</div>
       <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center; flex-wrap:wrap;">
         <input type="text" id="vec-a" value="國王" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
-        <span style="font-size:13px;">−</span>
+        <span style="font-size:13px; color:var(--color-text-primary)">−</span>
         <input type="text" id="vec-b" value="男人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
-        <span style="font-size:13px;">+</span>
+        <span style="font-size:13px; color:var(--color-text-primary)">+</span>
         <input type="text" id="vec-c" value="女人" style="width:70px; padding:4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-size:13px;">
         <button class="run-btn" onclick="runVecOp()" style="padding:4px 10px; font-size:13px;">＝?</button>
       </div>
@@ -600,3 +660,5 @@ runTFIDF();
 drawEmbedCanvas();
 setTimeout(drawEmbedCanvas, 200);
 </script>
+</body>
+</html>
