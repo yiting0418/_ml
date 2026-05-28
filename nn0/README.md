@@ -1,221 +1,192 @@
-# nn0.py — 從零開始學自動微分
+# nn0 — 從零開始的神經網路學習套件
 
-這份程式碼用不到 200 行的純 Python，實作了一個**自動微分引擎**（autograd）。沒有 TensorFlow、沒有 PyTorch，只有最基本的 Python 與 math 模組。
+`nn0.py` 是一個**純 Python** 實作的自動微分引擎（autograd engine）與小型深度學習工具組，專為**理解機器學習底層原理**而設計。它沒有使用任何第三方數值運算庫（如 NumPy、PyTorch），讓你能真正看懂每個環節在做什麼。
 
-目標不是寫出高效能的程式，而是讓你清楚看見**反向傳播（backpropagation）的核心機制**。
+## 核心概念
 
----
+### 計算圖 (Computation Graph) 與自動微分 (Autograd)
 
-## 目錄
+`Value` 類別是整個套件的核心。它不只儲存一個數值（`.data`），還會追蹤：
 
-1. [為什麼需要自動微分？](#1-為什麼需要自動微分)
-2. [Value 類別：計算圖的節點](#2-value-類別計算圖的節點)
-3. [反向傳播的兩步驟](#3-反向傳播的兩步驟)
-4. [實際運作範例](#4-實際運作範例)
-5. [Adam 優化器](#5-adam-優化器)
-6. [完整 API 一覽](#6-完整-api-一覽)
-7. [延伸閱讀](#7-延伸閱讀)
+- **運算歷程**：這個值是從哪些值、透過什麼運算產生的（`_children`）
+- **局部梯度**：每個運算對其輸入的偏微分（`_local_grads`）
 
----
-
-## 1. 為什麼需要自動微分？
-
-訓練神經網路的核心迴圈很單純：
+當你寫 `d = (a + b) * c`，背後建立了一個計算圖：
 
 ```
-1. 給定輸入 → 計算輸出（forward）
-2. 比較輸出與正確答案 → 得到 loss
-3. 計算 loss 對每個參數的「梯度」（gradient）
-4. 沿著梯度反方向調整參數（gradient descent）
+    a
+     \
+      [+] --> 中間節點 --> [*] --> d
+     /                    /
+    b                    c
 ```
 
-其中第 3 步是最麻煩的。當網路很深時，手算鏈鎖律（chain rule）既繁瑣又容易出錯。
-
-**自動微分**的做法是：讓每個數值都記得「自己是怎麼算出來的」，求梯度的時候順著這個計算軌跡反向走一遍即可。
-
-這就是 `Value` 類別做的事。
-
----
-
-## 2. Value 類別：計算圖的節點
-
-`Value` 包裝一個普通的數字，但它多了兩樣東西：
-
-```python
-class Value:
-    __slots__ = ('data', 'grad', '_children', '_local_grads')
-```
-
-| 屬性 | 用途 |
-|------|------|
-| `data` | 實際的數值 |
-| `grad` | 累積的梯度（初始為 0） |
-| `_children` | 這個值是「從哪些節點算出來的」 |
-| `_local_grads` | 對每個 child 的「局部梯度」 |
-
-每次你做加、乘、ReLU 等運算，`Value` 不只算出結果的數值，還會**記錄**：
-
-- 這個結果是由哪些輸入（`_children`）產生的
-- 結果對每個輸入的偏微分是多少（`_local_grads`）
-
-例如 `c = a + b`：
-
-```python
-def __add__(self, other):
-    other = other if isinstance(other, Value) else Value(other)
-    return Value(self.data + other.data,    # 前向計算
-                 (self, other),              # 記錄 children
-                 (1, 1))                     # ∂c/∂a = 1, ∂c/∂b = 1
-```
-
-又如 `c = a * b`：
-
-```python
-def __mul__(self, other):
-    other = other if isinstance(other, Value) else Value(other)
-    return Value(self.data * other.data,    # 前向計算
-                 (self, other),              # 記錄 children
-                 (other.data, self.data))    # ∂c/∂a = b, ∂c/∂b = a
-```
-
-這些節點與節點之間的連線，形成一個**有向無環圖（DAG）**——這就是計算圖。
-
----
-
-## 3. 反向傳播的兩步驟
-
-呼叫 `backward()` 時，做了兩件事：
-
-**步驟一：拓撲排序（topological sort）**
-
-把計算圖中所有節點排成一個序列，確保每個節點都在它的依賴項之後出現。這樣反向走的時候，梯度才能正確傳遞。
-
-```python
-def build_topo(v):
-    if v not in visited:
-        visited.add(v)
-        for child in v._children:
-            build_topo(child)
-        topo.append(v)        # children 先加入，parent 後加入
-```
-
-**步驟二：沿反向傳播梯度**
-
-```python
-self.grad = 1                        # d loss / d loss = 1
-for v in reversed(topo):             # 從 loss 開始往回走
-    for child, local_grad in zip(v._children, v._local_grads):
-        child.grad += local_grad * v.grad   # 鏈鎖律
-```
-
-這裡的核心就是**鏈鎖律**：如果 `y = f(g(x))`，那麼 `dy/dx = (df/dg) * (dg/dx)`。程式碼中的 `local_grad` 就是 `df/dg`，`v.grad` 就是上層傳下來的 `dg/dx`。
-
----
-
-## 4. 實際運作範例
+呼叫 `d.backward()` 時，它會走訪整個計算圖，用**連鎖律（chain rule）** 一路把梯度傳回每個葉節點。
 
 ```python
 from nn0 import Value
 
-a = Value(2.0)                     # a = 2
-b = Value(3.0)                     # b = 3
-c = a * b                          # c = 6, ∂c/∂a = 3, ∂c/∂b = 2
-d = c + a                          # d = 8, ∂d/∂c = 1, ∂d/∂a = 1
-
-d.backward()                       # 反向傳播
-
-print(a.grad)  # 梯度是怎麼累積的？
+a = Value(2.0)
+b = Value(3.0)
+d = (a + b) * Value(4.0)
+d.backward()
+print(a.grad)  # ∂d/∂a = 4.0
+print(b.grad)  # ∂d/∂b = 4.0
 ```
 
-當你呼叫 `d.backward()`，程式會先拓撲排序，然後反向走：
+### 支援的運算
 
-```
-∂d/∂d = 1
-∂d/∂c = 1  →  c.grad += 1 * 1 = 1
-  ∂c/∂a = 3 → a.grad += 3 * 1 = 3   (經由 c)
-  ∂c/∂b = 2 → b.grad += 2 * 1 = 2
-∂d/∂a = 1  →  a.grad += 1 * 1 = 1   (經由 d 直接)
-```
+| 運算 | 說明 | 梯度 |
+|------|------|------|
+| `+` | 加法 | 上游梯度直接通過 (乘以 1) |
+| `*` | 乘法 | `∂/∂x = y`, `∂/∂y = x` |
+| `**` | 乘冪 | `∂/∂x = n * x^(n-1)` |
+| `log()` | 自然對數 | `∂/∂x = 1/x` |
+| `exp()` | 指數 | `∂/∂x = e^x` |
+| `relu()` | ReLU 激勵函數 | `∂/∂x = 1` (若 x>0)，否則 0 |
 
-最終 `a.grad = 3 + 1 = 4`。
+### Adam 優化器
 
----
+`Adam` 類別實作了 Adaptive Moment Estimation 演算法，結合了 Momentum 和 RMSProp 的優點：
 
-## 5. Adam 優化器
-
-有了梯度之後，下一步就是更新參數。這裡實作了 Adam 優化器。
-
-Adam 維護每個參數的一階動量（`m`）與二階動量（`v`），更新規則為：
+- **m**：梯度的一階動量（慣性項）
+- **v**：梯度的二階動量（適應性學習率）
+- **偏差修正**：解決初期估計偏零的問題
+- **學習率衰減**：支援 `lr_override` 實現線性衰減
 
 ```python
-m = β₁·m + (1 − β₁)·grad
-v = β₂·v + (1 − β₂)·grad²
-m_hat = m / (1 − β₁^t)
-v_hat = v / (1 − β₂^t)
-param -= lr · m_hat / (√v_hat + ε)
-```
-
-每次呼叫 `step()` 後會自動將所有參數的 `grad` 歸零。
-
-```python
-from nn0 import Value, Adam
+from nn0 import Adam
 
 w = Value(0.0)
 b = Value(0.0)
 opt = Adam([w, b], lr=0.1)
 
-# ... 計算 loss ...
-loss.backward()
-opt.step()   # 更新 w, b，並清除 gradient
+# 每次迭代：
+# loss.backward() → 計算梯度
+# opt.step()      → 更新參數並清空梯度
 ```
 
----
+## 工具函數
 
-## 6. 完整 API 一覽
+### `linear(x, w)` — 線性層 (矩陣乘法)
 
-### Value — 自動微分節點
+```python
+from nn0 import linear, Value
 
-| 運算 | 語法 | 梯度 |
-|------|------|------|
-| 加法 | `a + b` | ∂/∂a = 1, ∂/∂b = 1 |
-| 乘法 | `a * b` | ∂/∂a = b, ∂/∂b = a |
-| 冪次 | `a ** k` | ∂/∂a = k·a^(k−1) |
-| ReLU | `a.relu()` | ∂/∂a = 1 若 a > 0，否則 0 |
-| 指數 | `a.exp()` | ∂/∂a = e^a |
-| 對數 | `a.log()` | ∂/∂a = 1/a |
-| 負號 | `-a` | ∂/∂a = −1 |
-| 減法 | `a - b` | ∂/∂a = 1, ∂/∂b = −1 |
-| 除法 | `a / b` | ∂/∂a = 1/b, ∂/∂b = −a/b² |
+x = [Value(1.0), Value(2.0)]
+w = [[Value(0.5), Value(0.3)],  # 2 個輸出神經元
+     [Value(0.1), Value(0.4)]]  # 每個神經元有 2 個權重
+y = linear(x, w)  # 回傳 [y0, y1]
+```
 
-### 高層函數
+### `softmax(logits)` — Softmax 激勵函數
 
-| 函數 | 說明 |
-|------|------|
-| `linear(x, w)` | 矩陣乘法 `y = W @ x`，`w` 是二維 list |
-| `softmax(logits)` | 數值穩定的 softmax |
-| `rmsnorm(x)` | RMS 正規化 |
-| `cross_entropy(logits, target_id)` | 使用 Log-Sum-Exp 技巧的 cross-entropy loss |
-| `gd(model, optimizer, tokens, step, num_steps)` | 單步梯度下降（給 transformer 訓練用） |
+將任意實數向量轉換為機率分佈（總和為 1）：
 
-### 建議閱讀順序
+```python
+from nn0 import softmax, Value
 
-1. 先跑 `examples/01_basics.py` — 理解計算圖與梯度傳遞
-2. 再跑 `examples/02_linear_regression.py` — 看 Adam 如何學習
-3. 接著 `examples/03_softmax_classification.py` — softmax + cross-entropy
-4. 最後 `examples/04_rmsnorm_demo.py` — 正規化層的效用
+logits = [Value(2.0), Value(1.0), Value(0.1)]
+probs = softmax(logits)  # 每項在 [0,1] 之間，總和 = 1
+```
 
----
+實作使用 **數值穩定技巧**：先減去最大值再取 exp，避免溢位。
 
-## 7. 延伸閱讀
+### `cross_entropy(logits, target_id)` — 交叉熵損失
 
-如果你理解了這份程式碼，推薦繼續研究：
+直接對 logits 計算交叉熵，不使用中間 softmax，避免 `log(0)` 的數值問題：
 
-- **Andrej Karpathy — micrograd**：本程式的靈感來源，也是 nn0.py 的進階版本
-- **CS231n 筆記 — 反向傳播**：對鏈鎖律與計算圖的視覺化解釋
-- **Adam: A Method for Stochastic Optimization (Kingma & Ba, 2014)**：Adam 原始論文
+```
+Loss = log(sum(exp(x_i - M))) - (x_target - M)
+     = -log( e^{x_target} / sum(e^{x_i}) )
+```
 
----
+其中 M = max(logits)，即 Log-Sum-Exp 技巧。
 
-## 授權
+### `rmsnorm(x)` — RMS 層正規化
 
-MIT
+將啟用值除以其 RMS（均方根），讓輸出維持在穩定的數值範圍：
+
+```python
+from nn0 import rmsnorm, Value
+
+x = [Value(1.5), Value(-3.2), Value(0.7)]
+normed = rmsnorm(x)  # 正規化後 RMS ≈ 1
+```
+
+## 範例說明
+
+### 範例 1：`examples/01_basics.py` — 自動微分基礎
+
+最簡單的入門。展示如何建立計算圖、執行反向傳播、以及讀取梯度來理解連鎖律。
+
+學習重點：
+- 計算圖如何建立
+- `backward()` 如何傳播梯度
+- `relu()` 和 `log()` 合成的計算圖
+
+### 範例 2：`examples/02_linear_regression.py` — 線性回歸
+
+從資料中學習 `y = 2x + 1` 的真實參數。使用 **MSE 損失** 和 **Adam 優化器**。
+
+學習重點：
+- 監督式學習的完整流程：forward → loss → backward → update
+- 參數初始化、最佳化迭代
+- 損失函數如何引導參數收斂
+
+### 範例 3：`examples/03_softmax_classification.py` — Softmax 分類
+
+4 維輸入 → 3 類別分類。使用 `cross_entropy` 作為損失函數。
+
+學習重點：
+- 多類別分類的架構
+- Cross-entropy loss 與 softmax 的搭配
+- `linear()` 作為權重層
+
+### 範例 4：`examples/04_rmsnorm_demo.py` — RMS 正規化
+
+展示 RMS Normalization 如何改變資料分佈，驗證正規化後 RMS ≈ 1。
+
+學習重點：
+- 正規化 (Normalization) 的作用
+- 為什麼現代神經網路需要正規化層
+
+## 如何執行
+
+```bash
+# 在專案目錄下執行
+cd nn0
+
+# 執行範例
+python examples/01_basics.py
+python examples/02_linear_regression.py
+python examples/03_softmax_classification.py
+python examples/04_rmsnorm_demo.py
+
+# 或直接操作 nn0
+python -c "from nn0 import Value; print(Value(42))"
+```
+
+不需要安裝任何第三方套件，只需要 Python 3 標準函式庫。
+
+## 建議學習路徑
+
+```
+Value 類別 (自動微分)
+    → 範例 1 (計算圖與梯度)
+    → Adam 優化器 + 範例 2 (線性回歸)
+    → softmax / cross_entropy + 範例 3 (分類)
+    → rmsnorm + 範例 4 (正規化)
+    → gd() 與完整訓練流程 (閱讀 nn0.py 最底層)
+```
+
+## 下一步
+
+理解 nn0.py 後，你可以：
+
+1. **閱讀 PyTorch 的 `autograd` 文件**，你會發現核心概念完全相同
+2. **加入更多 layer 類型**：如 Conv2d、LayerNorm
+3. **實作更複雜的網路**：MLP、RNN、Transformer
+4. **研究現代實作**：看看 PyTorch 如何用 C++ 加速相同的 autograd 機制
+
+nn0.py 的全部程式碼只有 **~160 行**，每一行都有具體的教育意義。讀懂它，你就掌握了深度學習框架的最小核心。
