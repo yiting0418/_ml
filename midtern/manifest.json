@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Tixcraft Auto Solver (無伺服器版)",
+  "version": "2.0",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://*.tixcraft.com/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["model.onnx", "model.onnx.data", "ort-wasm.wasm"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.tixcraft.com/*"],
+      "js": ["ort.min.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
